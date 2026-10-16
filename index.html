@@ -446,6 +446,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
 @media(max-width:700px){
   .app{grid-template-rows:52px minmax(0,1fr) 30px}
   .top{padding:0 6px;gap:2px;overflow-x:auto;scrollbar-width:none}
+  .menu{position:fixed;left:8px;right:8px;min-width:0;max-height:calc(100vh - 160px);overflow-y:auto}
   .top::-webkit-scrollbar{display:none}
   .top .btn{flex:none}
   #bOpen,#bTools,#bOrg,#bExport,#bSave{font-size:0;gap:0;width:40px;padding:0}
@@ -1891,7 +1892,11 @@ async function runConvert(scope){
 
 /* ================= menu Exportar, painéis e tema ================= */
 const expMenu=$('#exportMenu'),expBtn=$('#bExport');
-function menuOpen(on){expMenu.hidden=!on;expBtn.setAttribute('aria-expanded',String(on))}
+function menuOpen(on){
+  // celular: a barra de cima rola para o lado e cortaria o menu; ele abre fixo, logo abaixo da barra
+  if(on&&matchMedia('(max-width:700px)').matches)expMenu.style.top=Math.round($('.top').getBoundingClientRect().bottom+4)+'px';
+  else expMenu.style.top='';
+  expMenu.hidden=!on;expBtn.setAttribute('aria-expanded',String(on))}
 expBtn.onclick=e=>{e.stopPropagation();menuOpen(expMenu.hidden)};
 document.addEventListener('click',e=>{if(!expMenu.hidden&&!e.target.closest('.dd'))menuOpen(false)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!expMenu.hidden){menuOpen(false);expBtn.focus()}});
