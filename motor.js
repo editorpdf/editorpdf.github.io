@@ -106,6 +106,21 @@ const ehItalico = f => f.italic || /italic|oblique/i.test(f.name || '');
 const semSubset = n => String(n || '').replace(/^[A-Z]{6}\+/, '');
 const mediana = a => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 
+// O PDF às vezes junta num bloco só as células de uma linha de tabela (textos lado a lado, na mesma altura).
+// Esses textos não são um parágrafo: cada coluna vira um bloco próprio, com suas linhas empilhadas.
+function separarColunas(lines) {
+  if (lines.length < 2) return [lines];
+  const mesmaAltura = (a, b) => Math.min(a.bbox[3], b.bbox[3]) - Math.max(a.bbox[1], b.bbox[1]) > 0.5 * Math.min(a.bbox[3] - a.bbox[1], b.bbox[3] - b.bbox[1]);
+  if (!lines.some((a, i) => lines.slice(i + 1).some(b => mesmaAltura(a, b)))) return [lines];
+  const colunas = [];
+  for (const l of [...lines].sort((a, b) => a.bbox[0] - b.bbox[0] || a.bbox[1] - b.bbox[1])) {
+    const col = colunas.find(c => { const u = c[c.length - 1];
+      return !mesmaAltura(u, l) && l.bbox[0] < u.bbox[2] && l.bbox[2] > u.bbox[0] && l.bbox[1] - u.bbox[3] >= 0 && l.bbox[1] - u.bbox[3] < 2 * (u.bbox[3] - u.bbox[1]); });
+    if (col) col.push(l); else colunas.push([l]);
+  }
+  return colunas.map(c => c.sort((a, b) => a.bbox[1] - b.bbox[1]));
+}
+
 function analisar(dados, pno) {
   const doc = abrir(dados);
   try {
@@ -115,7 +130,7 @@ function analisar(dados, pno) {
     if (rotacao(page)) return { rotated: true, blocks: [] };
     const out = [];
     for (const b of blocosDaPagina(page)) {
-      const lines = []; let horizontal = true;
+      const todas = []; let horizontal = true;
       for (const l of b.lines) {
         if (Math.abs(l.dir[1]) > 0.02 || l.dir[0] < 0.98) { horizontal = false; break; }
         const text = l.chars.map(c => c.c).join('');
@@ -126,10 +141,11 @@ function analisar(dados, pno) {
         let mainK = null, mx = -1; for (const [k, v] of cont) if (v > mx) { mx = v; mainK = k; }
         const main = l.chars.find(c => c.c.trim() && semSubset(c.f.name) + '|' + Math.round(c.size * 10) / 10 + '|' + c.color === mainK) || l.chars[0];
         const first = l.chars.find(c => c.c.trim()) || l.chars[0];
-        lines.push({ bbox: l.bbox.map(v => Math.round(v * 100) / 100), origin: [Math.round(l.chars[0].origin[0] * 100) / 100, Math.round(first.origin[1] * 100) / 100],
+        todas.push({ bbox: l.bbox.map(v => Math.round(v * 100) / 100), origin: [Math.round(l.chars[0].origin[0] * 100) / 100, Math.round(first.origin[1] * 100) / 100],
           text, size: Math.round(main.size * 100) / 100, font: main.f.name, color: main.color, f: main.f, styles: [...cont.keys()] });
       }
-      if (!horizontal || !lines.length) continue;
+      if (!horizontal || !todas.length) continue;
+      for (const lines of separarColunas(todas)) {   // células de tabela lado a lado viram blocos separados
       const x0 = Math.min(...lines.map(l => l.bbox[0])), y0 = Math.min(...lines.map(l => l.bbox[1]));
       const x1 = Math.max(...lines.map(l => l.bbox[2])), y1 = Math.max(...lines.map(l => l.bbox[3]));
       const width = x1 - x0;
@@ -147,6 +163,7 @@ function analisar(dados, pno) {
       const f0 = lines[0].f, estilos = new Set(lines.flatMap(l => l.styles));
       out.push({ bbox: [x0, y0, x1, y1].map(v => Math.round(v * 100) / 100), lines: lines.map(({ f, styles, ...r }) => r), text, wrapped, size, font: f0.name,
         color: lines[0].color, family: familia(f0), bold: ehNegrito(f0), italic: ehItalico(f0), lineh: Math.round(lineh * 1000) / 1000, align, origin: lines[0].origin, mixed: estilos.size > 1 });
+      }
     }
     return { rotated: false, blocks: out, width: x1p - x0p, height: y1p - y0p };
   } finally { doc.destroy(); }
