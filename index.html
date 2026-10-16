@@ -64,6 +64,16 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .btn.ghost{border-color:transparent;background:transparent}
 .btn.ghost:hover:not(:disabled){background:var(--panel-2)}
 .btn.icon{width:36px;padding:0}
+/* impressão: só as páginas preparadas em #impressao saem no papel */
+#impressao{display:none}
+@media print{
+  @page{margin:0}
+  html,body{background:#fff!important;height:auto!important;overflow:visible!important}
+  body>*:not(#impressao){display:none!important}
+  #impressao{display:block!important}
+  #impressao img{display:block;width:100vw;height:100vh;object-fit:contain;break-after:page;page-break-after:always}
+  #impressao img:last-child{break-after:auto;page-break-after:auto}
+}
 .btn[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);border-color:transparent}
 .badge{font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px;background:var(--panel-2);color:var(--muted);white-space:nowrap;cursor:help;border:1px solid var(--border)}
 .badge.adv{background:color-mix(in srgb,var(--ok) 14%,var(--panel));color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,var(--border))}
@@ -442,7 +452,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
   #bOpen svg,#bTools svg,#bOrg svg,#bSave svg{display:block;width:20px;height:20px}
   #bExport svg{width:20px!important;height:20px!important}
   #bSave svg{color:#fff}
-  #bThumbs,#bRedo,#bTheme,.top .sep,#mode,.brand b{display:none}
+  #bThumbs,#bRedo,#bTheme,#bPrint,.top .sep,#mode,.brand b{display:none}
   .btn.icon,#bOpen,#bTools,#bOrg,#bExport,#bSave{width:36px;height:38px}
   .brand{padding:4px}
   .main,.main.no-thumbs,.main.no-props,.main.no-thumbs.no-props{grid-template-columns:0 0 minmax(0,1fr) 0}
@@ -502,9 +512,11 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
     <span class="sep"></span>
     <span class="badge" id="mode" title="Verificando…">…</span>
     <button class="btn icon ghost" id="bTheme" aria-label="Alternar tema claro e escuro" title="Tema claro/escuro"><svg class="i"><use href="#i-moon"/></svg></button>
+    <button class="btn icon ghost" id="bPrint" disabled aria-label="Imprimir" title="Imprimir (Ctrl+P)"><svg class="i"><use href="#i-print"/></svg></button>
     <div class="dd">
       <button class="btn" id="bExport" disabled aria-haspopup="menu" aria-expanded="false">Exportar <svg class="i" style="width:14px;height:14px"><use href="#i-chev"/></svg></button>
       <div class="menu" id="exportMenu" role="menu" hidden>
+        <button role="menuitem" id="xPrint"><span class="mi"><svg class="i"><use href="#i-print"/></svg></span><span><b>Imprimir</b><small>Manda para a impressora, com as suas edições</small></span></button>
         <button role="menuitem" id="xOcr"><span class="mi"><svg class="i"><use href="#i-scan"/></svg></span><span><b>Reconhecer texto (OCR)</b><small>Deixa PDF escaneado pesquisável e copiável</small></span></button>
         <button role="menuitem" id="xDocx"><span class="mi"><svg class="i"><use href="#i-word"/></svg></span><span><b>Converter para Word</b><small>Gera um arquivo .docx editável</small></span></button>
         <button role="menuitem" id="xFind"><span class="mi"><svg class="i"><use href="#i-search"/></svg></span><span><b>Buscar e substituir</b><small>Troca uma palavra em todas as páginas</small></span></button>
@@ -613,6 +625,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
 <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></symbol>
+<symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/><path d="M17.5 12h.01"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
 <symbol id="i-pages" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="8" rx="1"/><rect x="14" y="3" width="7" height="8" rx="1"/><rect x="3" y="13" width="7" height="8" rx="1"/><rect x="14" y="13" width="7" height="8" rx="1"/></symbol>
 <symbol id="i-carimbo" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><rect x="6" y="9" width="12" height="6" rx="1"/></symbol>
@@ -908,7 +921,7 @@ const undo=()=>gotoHist(S.hi-1),redo=()=>gotoHist(S.hi+1);
 function updateChrome(){
   $('#bUndo').disabled=S.hi<=0;$('#bRedo').disabled=S.hi>=S.hist.length-1;
   $('#mainGrid').classList.toggle('is-home',!S.doc);$('.status').style.visibility=S.doc?'visible':'hidden';
-  $('#bSave').disabled=!S.doc;$('#bExport').disabled=!S.doc;$('#bFind').disabled=!S.doc;$('#bOrg').disabled=!S.doc;$$('.thumbs .tb .btn').forEach(b=>b.disabled=!S.doc);
+  $('#bSave').disabled=!S.doc;$('#bExport').disabled=!S.doc;$('#bPrint').disabled=!S.doc;$('#bFind').disabled=!S.doc;$('#bOrg').disabled=!S.doc;$$('.thumbs .tb .btn').forEach(b=>b.disabled=!S.doc);
   $('#ptot').textContent='/ '+S.pages.length;$('#zVal').textContent=Math.round(S.scale*100)+'%';
   renderProps();
 }
@@ -1649,6 +1662,12 @@ function download(bytes,name,mime){
     dialog({title:'Arquivo salvo',sub:`“${esc(name)}” está em ${esc(r.slice(3))}.`,ok:'Compartilhar',cancel:'OK',onOk:()=>{AndroidApp.compartilhar(name,b,mime||'application/pdf')}});
     return;
   }
+  if(window.pywebview&&pywebview.api&&pywebview.api.salvar){ // app do Windows: janela "Salvar como" do próprio Windows
+    const b=bytesToB64(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes));
+    pywebview.api.salvar(name,b).then(r=>{if(r&&r.erro)toast('Não foi possível salvar: '+r.erro,true);else if(r&&r.caminho)toast('Salvo em '+r.caminho)})
+      .catch(e=>toast('Não foi possível salvar: '+(e&&e.message||e),true));
+    return 'janela';
+  }
   // iPhone/iPad (e celulares no navegador): a janela de compartilhar tem "Salvar em Arquivos", WhatsApp, e-mail...
   const arq=new File([bytes],name,{type:mime||'application/pdf'});
   if(window.APP_WEB&&navigator.canShare&&navigator.canShare({files:[arq]})&&/iPhone|iPad|iPod|Android|Macintosh.*Mobile/i.test(navigator.userAgent+(navigator.maxTouchPoints>1?' Mobile':''))){
@@ -1726,6 +1745,74 @@ $('#homeMergeIn').addEventListener('change',async e=>{
   busy(false);await openFile(new File([bytes],'pdfs-juntos.pdf',{type:'application/pdf'}));
 });
 
+/* ================= imprimir ================= */
+// "1-3, 5, 8-" -> índices das páginas (0 = primeira); null se não entender
+function faixaPaginas(txt,n){
+  const out=new Set();
+  for(const parte of String(txt).split(/[,;]/).map(s=>s.trim()).filter(Boolean)){
+    const m=parte.match(/^(\d+)?\s*(?:(-)\s*(\d+)?)?$/);if(!m||(!m[1]&&!m[3]))return null;
+    const a=m[1]?+m[1]:1,b=m[2]?(m[3]?+m[3]:n):a;
+    if(a<1||b<a||a>n)return null;
+    for(let k=a;k<=Math.min(b,n);k++)out.add(k-1);
+  }
+  return out.size?[...out].sort((x,y)=>x-y):null;
+}
+function openPrint(){
+  if(!S.doc||S.busy)return;
+  const n=S.pages.length,sel=[...S.pagesSel].sort((a,b)=>a-b),temSel=sel.length>1&&sel.length<n;
+  const bg=dialog({title:'Imprimir',sub:'Sai do jeito que está na tela, com as suas edições. A impressora, o número de cópias e o papel você escolhe na próxima janela.',
+    body:`<label class="opt"><input type="radio" name="imp" value="all" checked><span><b>Todas as páginas</b><small>${n} página${n>1?'s':''}</small></span></label>
+      <label class="opt"><input type="radio" name="imp" value="cur"><span><b>Só a página atual</b><small>página ${S.cur+1}</small></span></label>
+      ${temSel?`<label class="opt"><input type="radio" name="imp" value="sel"><span><b>Só as páginas selecionadas</b><small>${sel.map(i=>i+1).join(', ')}</small></span></label>`:''}
+      <label class="opt"><input type="radio" name="imp" value="faixa"><span><b>Escolher páginas</b><small><input id="impFaixa" placeholder="ex.: 1-3, 5" style="width:150px;margin-top:4px" aria-label="Páginas para imprimir"></small></span></label>`,
+    ok:'Imprimir',onOk:bg=>{
+      const v=$('input[name=imp]:checked',bg).value;let idx;
+      if(v==='all')idx=S.pages.map((_,i)=>i);else if(v==='cur')idx=[S.cur];else if(v==='sel')idx=sel;
+      else{idx=faixaPaginas($('#impFaixa',bg).value,n);if(!idx){toast(`Páginas inválidas. Use números de 1 a ${n}, por exemplo: 1-3, 5`,true);$('#impFaixa',bg).focus();return false}}
+      imprimir(idx);
+    }});
+  const f=$('#impFaixa',bg);f.addEventListener('focus',()=>{$('input[name=imp][value=faixa]',bg).checked=true});
+  f.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('[data-ok]',bg).click()}});
+}
+async function imprimir(idx){
+  if(S.busy)return;busy(true,'Preparando a impressão…');
+  let area=$('#impressao');if(area)area.remove();
+  try{
+    let bytes=dirty()?await bake(S.bytes,S.objs):S.bytes;
+    if(window.AndroidApp&&AndroidApp.imprimir){ // celular: o Android imprime o próprio PDF (melhor qualidade)
+      if(idx.length<S.pages.length)bytes=await rebuild(bytes,idx.map(i=>({src:i})));
+      AndroidApp.imprimir((S.name||'documento')+'.pdf',bytesToB64(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes)));
+      return;
+    }
+    // computador e iPhone: cada página vira uma imagem nítida (cerca de 200 dpi) e vai para a janela de impressão
+    const doc=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
+    area=document.createElement('div');area.id='impressao';
+    let deitadas=0;
+    for(let k=0;k<idx.length;k++){
+      busy(true,`Preparando a impressão… página ${k+1} de ${idx.length}`);
+      const pg=await doc.getPage(idx[k]+1),vp0=pg.getViewport({scale:1});
+      const esc2=Math.min(200/72,4000/Math.max(vp0.width,vp0.height)),vp=pg.getViewport({scale:esc2});
+      if(vp0.width>vp0.height)deitadas++;
+      const c=document.createElement('canvas');c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+      const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+      await pg.render({canvasContext:ctx,viewport:vp,annotationMode:pdfjsLib.AnnotationMode.ENABLE}).promise;
+      const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));
+      const im=new Image();im.src=URL.createObjectURL(blob);im.alt='';area.appendChild(im);
+      c.width=c.height=0;pg.cleanup();
+    }
+    doc.destroy();
+    // páginas deitadas: o papel começa deitado também (dá para trocar na janela de impressão)
+    const st=document.createElement('style');st.textContent=`@page{size:${deitadas>idx.length/2?'landscape':'portrait'};margin:0}`;area.appendChild(st);
+    document.body.appendChild(area);
+    await Promise.all([...area.querySelectorAll('img')].map(im=>im.decode().catch(()=>{})));
+    busy(false);
+    const limpar=()=>{area.querySelectorAll('img').forEach(im=>URL.revokeObjectURL(im.src));area.remove();removeEventListener('afterprint',limpar)};
+    addEventListener('afterprint',limpar);
+    window.print();
+  }catch(e){console.error(e);toast('Não foi possível imprimir: '+(e&&e.message||e),true)}
+  finally{busy(false)}
+}
+
 /* ================= janelas simples ================= */
 function dialog({title,sub,body='',ok='OK',cancel='Cancelar',onOk}){
   const opener=document.activeElement;
@@ -1795,8 +1882,8 @@ async function runConvert(scope){
     let bytes=dirty()?await bake(S.bytes,S.objs):S.bytes,suffix='';
     if(scope==='sel'){const sel=[...S.pagesSel].sort((a,b)=>a-b);bytes=await rebuild(bytes,sel.map(i=>({src:i})));suffix='-paginas'}
     const j=await api('/api/pdf2docx',{pdf:bytesToB64(bytes),inicio:0});
-    download(b64ToBytes(j.docx),(S.name||'documento')+suffix+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    toast(`Word gerado (${j.paginas} página${j.paginas>1?'s':''}). Veja a pasta de downloads.`);
+    const ond=download(b64ToBytes(j.docx),(S.name||'documento')+suffix+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    toast(`Word gerado (${j.paginas} página${j.paginas>1?'s':''}).`+(ond==='baixado'?' Veja a pasta de downloads.':''));
     (j.avisos||[]).forEach(w=>toast(w,true));
   }catch(e){console.error(e);toast('Não foi possível converter: '+(e&&e.message||e),true)}
   finally{busy(false)}
@@ -1810,6 +1897,7 @@ document.addEventListener('click',e=>{if(!expMenu.hidden&&!e.target.closest('.dd
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!expMenu.hidden){menuOpen(false);expBtn.focus()}});
 $('#xDocx').onclick=()=>{menuOpen(false);openConvert()};
 $('#xOcr').onclick=()=>{menuOpen(false);openOcr()};
+$('#xPrint').onclick=()=>{menuOpen(false);openPrint()};$('#bPrint').onclick=openPrint;
 $('#xExtract').onclick=()=>{menuOpen(false);$('[data-pg=extract]').click()};
 $('#xFind').onclick=()=>{menuOpen(false);openFind()};
 $('#xAuto').onclick=()=>{menuOpen(false);openAutoRedact()};
@@ -1835,6 +1923,7 @@ document.addEventListener('keydown',e=>{
   const mod=e.ctrlKey||e.metaKey;
   if(mod&&e.key.toLowerCase()==='s'){e.preventDefault();save();return}
   if(mod&&e.key.toLowerCase()==='f'&&S.doc){e.preventDefault();openFind();return}
+  if(mod&&e.key.toLowerCase()==='p'){e.preventDefault();openPrint();return}
   if(typing)return;
   if(mod&&e.key.toLowerCase()==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
   if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
