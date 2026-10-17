@@ -785,7 +785,7 @@ async function detectServer(){
   if(!/^https?:$/.test(location.protocol)){basic('Abra pelo arquivo "Abrir editor.bat" para ativar o modo avançado: o texto antigo é apagado de verdade do PDF.');return}
   try{
     const r=await fetch('/api/ping',{cache:'no-store'});const j=await r.json();
-    if(j&&j.ok){S.srv=true;S.versaoApp=j.versao||null;S.docx=j.docx!==false;S.ocr=!!j.ocr;S.idiomas=j.idiomas||[];S.office=j.office||[];S.navegador=!!j.navegador;S.pdfa=!!j.pdfa;S.assinatura=!!j.assinatura;updateHome();renderToolsHome();badge.textContent='Modo avançado';badge.className='badge adv';badge.title='Servidor local ativo: o texto antigo é removido de verdade e a fonte original do PDF é reaproveitada quando possível.';renderProps();return}
+    if(j&&j.ok){S.srv=true;S.versaoApp=j.versao||null;S.loja=!!j.loja;S.docx=j.docx!==false;S.ocr=!!j.ocr;S.idiomas=j.idiomas||[];S.office=j.office||[];S.navegador=!!j.navegador;S.pdfa=!!j.pdfa;S.assinatura=!!j.assinatura;updateHome();renderToolsHome();badge.textContent='Modo avançado';badge.className='badge adv';badge.title='Servidor local ativo: o texto antigo é removido de verdade e a fonte original do PDF é reaproveitada quando possível.';renderProps();return}
   }catch(e){}
   basic('Servidor local não encontrado. Abra pelo "Abrir editor.bat" para ativar o modo avançado.');
 }
@@ -2564,7 +2564,7 @@ $('#bRestaurar').onclick=()=>{
 function versaoMaior(a,b){const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0}return false}
 async function verAtualizacao(){
   const android=!!window.AndroidApp,windows=!!(window.pywebview&&pywebview.api&&pywebview.api.atualizar);
-  const atual=android?window.APP_VERSAO:S.versaoApp;if(!atual||!(android||windows))return;
+  const atual=android?window.APP_VERSAO:S.versaoApp;if(!atual||!(android||windows)||S.loja)return; // pela Loja quem atualiza é a Loja
   let j;try{const r=await fetch('https://editorpdf.github.io/versao.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return} // sem internet: fica quieto
   const nova=j&&j[android?'android':'windows'];if(!nova||!nova.versao||!nova.url||!versaoMaior(nova.versao,atual))return;
   try{if(localStorage.getItem('editorpdf-pular-versao')===nova.versao)return}catch(e){}
