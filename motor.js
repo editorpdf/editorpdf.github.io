@@ -249,7 +249,8 @@ async function aplicar(dados, ops) {
     }
   }
   if (conta.n) avisos.push(`${conta.n} caractere(s) não existem nas fontes padrão e viraram “?”.`);
-  return { pdf: bytesParaB64(await pd.save()), warnings: avisos, report };
+  const saida = await pd.save();
+  return { bytes: saida, get pdf() { return bytesParaB64(saida); }, warnings: avisos, report };
 }
 
 /* ------------------------------------------------------------ busca (tarja automática, buscar e substituir) */
@@ -342,7 +343,8 @@ async function ocr(dados, paginas, idioma = 'por+eng', pular = true) {
     }
   } finally { await worker.terminate(); doc.destroy(); }
   if (giradas) avisos.push(`${giradas} página(s) girada(s) não foram reconhecidas no celular.`);
-  return { pdf: bytesParaB64(await pd.save()), reconhecidas, avisos };
+  const saida = await pd.save();
+  return { bytes: saida, get pdf() { return bytesParaB64(saida); }, reconhecidas, avisos };
 }
 
 /* ------------------------------------------------------------ ZIP simples (vários arquivos de saída) */
@@ -498,7 +500,7 @@ F.reparar = { min: 1, max: 20, ext: PDF, fn(arqs) {
 F.ocr = { min: 1, max: 10, ext: PDF, async fn(arqs, op) {
   const s = [], a = [];
   for (const [nome, dados] of arqs) { const d = abrir(dados, nome), pgs = faixa(op.paginas, d.countPages(), true); d.destroy();
-    const r = await ocr(dados, pgs, op.idioma || 'por+eng', op.pular !== false); s.push([base(nome) + '-ocr.pdf', b64ParaBytes(r.pdf)]);
+    const r = await ocr(dados, pgs, op.idioma || 'por+eng', op.pular !== false); s.push([base(nome) + '-ocr.pdf', r.bytes]);
     a.push(`“${nome}”: texto reconhecido em ${r.reconhecidas} página(s). ${r.avisos.join(' ')}`); }
   return [s, a];
 } };
@@ -694,7 +696,7 @@ F.substituir = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
     }
     d.destroy();
     let saida = dados, av = [];
-    if (ops.length) { const r = await aplicar(dados, ops); saida = b64ParaBytes(r.pdf); av = r.warnings; }
+    if (ops.length) { const r = await aplicar(dados, ops); saida = r.bytes; av = r.warnings; }
     s.push([base(nome) + '-substituido.pdf', saida]);
     a.push(trocas ? `“${nome}”: ${trocas} ocorrência(s) trocada(s).` : `“${nome}”: “${busca}” não foi encontrado.`);
     if (giradas) a.push(`${giradas} ocorrência(s) em texto girado ou inclinado não foram trocadas.`);
@@ -778,10 +780,16 @@ export async function chamar(caminho, corpo = {}) {
   try {
     if (caminho === '/api/ping') return { ok: true, motor: 'celular', pymupdf: 'MuPDF.js', rede: false, docx: false, ocr: true, idiomas: ['eng', 'por'], office: [], navegador: false, pdfa: false, assinatura: false };
     if (caminho === '/api/tool') return await executar(String(corpo.ferramenta), corpo.arquivos || [], corpo.opcoes || {});
-    const pdf = b64ParaBytes(corpo.pdf || '');
+    // o editor manda o PDF em bytes (sem base64) e recebe o resultado em bytes também
+    const bin = corpo.pdf instanceof Uint8Array, pdf = bin ? corpo.pdf : b64ParaBytes(corpo.pdf || '');
+    const saida = r => { // copia campo a campo: o "pdf" em base64 só é calculado se alguém pediu base64
+      const o = bin ? { pdfBytes: r.bytes } : {};
+      for (const k of Object.keys(r)) if (k !== 'bytes' && (k !== 'pdf' || !bin)) o[k] = r[k];
+      return o;
+    };
     if (caminho === '/api/analyze') return analisar(pdf, +corpo.page);
-    if (caminho === '/api/apply') return await aplicar(pdf, corpo.ops);
-    if (caminho === '/api/ocr') return await ocr(pdf, corpo.paginas, corpo.idioma, corpo.pular_com_texto !== false);
+    if (caminho === '/api/apply') return saida(await aplicar(pdf, corpo.ops));
+    if (caminho === '/api/ocr') return saida(await ocr(pdf, corpo.paginas, corpo.idioma, corpo.pular_com_texto !== false));
     if (caminho === '/api/buscar') return { resultados: buscar(pdf, corpo.opcoes || {}) };
     throw new Erro('Esta função não está disponível no celular.');
   } catch (e) {

@@ -79,6 +79,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .badge.adv{background:color-mix(in srgb,var(--ok) 14%,var(--panel));color:var(--ok);border-color:color-mix(in srgb,var(--ok) 30%,var(--border))}
 .menu{position:absolute;right:0;top:calc(100% + 8px);min-width:290px;background:var(--panel);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:6px;z-index:60}
 .menu[hidden]{display:none}
+[hidden]{display:none!important} /* elementos com display próprio (flex, grid) também somem quando escondidos */
 .menu button{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:10px}
 .menu button:hover:not(:disabled){background:var(--panel-2)}
 .menu button small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
@@ -118,6 +119,63 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .page{position:relative;background:#fff;box-shadow:var(--page-shadow);flex:none;border-radius:2px}
 .page canvas{display:block}
 .layer{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden}
+/* texto selecionável (camada invisível do pdf.js por baixo dos objetos) e links do PDF */
+.textLayer{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;line-height:1;text-size-adjust:none;-webkit-text-size-adjust:none;forced-color-adjust:none;--scale-factor:1}
+.textLayer :is(span,br){color:transparent;position:absolute;white-space:pre;cursor:text;transform-origin:0% 0%}
+.textLayer span.markedContent{top:0;height:0}
+.textLayer ::selection{background:rgba(0,103,192,.32)}
+.textLayer br::selection{background:transparent}
+.textLayer .endOfContent{display:block;position:absolute;inset:100% 0 0;z-index:-1;cursor:default;user-select:none}
+.textLayer .endOfContent.active{top:0}
+.textLayer a.lnk{position:absolute;display:block;cursor:pointer;border-radius:2px}
+.textLayer a.lnk:hover{background:rgba(0,103,192,.12);outline:1px solid rgba(0,103,192,.35)}
+/* na ferramenta Selecionar, o clique passa direto para o texto e os links (os objetos continuam clicáveis) */
+/* aviso de versão nova */
+.aviso-versao{position:fixed;right:16px;bottom:44px;z-index:90;width:min(360px,calc(100vw - 32px));background:var(--panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.aviso-versao b{font-size:14px}
+.aviso-versao .av-sub{color:var(--muted)}
+.aviso-versao ul{margin:6px 0 2px;padding-left:18px;color:var(--text)}
+.aviso-versao .av-bt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+@media(max-width:700px){.aviso-versao{bottom:104px}}
+/* tela inicial: recuperar edições e arquivos recentes */
+.recuperar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px;padding:12px 14px;border-radius:8px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.recuperar .rctx{flex:1;min-width:200px}
+.recentes{margin:0 0 22px}
+.recentes h2{font-size:15px;font-weight:600;margin:0 0 10px}
+.rlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.rit{position:relative}
+.rabrir{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);cursor:pointer;font:inherit}
+.rabrir:hover{border-color:var(--accent)}
+.rcapa{flex:none;width:44px;height:56px;border-radius:3px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.rcapa img{max-width:100%;max-height:100%}
+.rtx{min-width:0;display:flex;flex-direction:column;gap:2px}
+.rtx b{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:16px}
+.rtx small{color:var(--muted);font-size:12px}
+.rx{position:absolute;top:4px;right:4px;width:22px;height:22px;border:0;border-radius:4px;background:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;opacity:0}
+.rit:hover .rx,.rx:focus-visible{opacity:1}
+.rx:hover{background:var(--panel-2);color:var(--text)}
+@media(hover:none){.rx{opacity:1}}
+/* assinaturas guardadas */
+.sgLista{display:flex;flex-wrap:wrap;gap:10px}
+.sgItem{display:flex;align-items:center;gap:4px}
+.sgUsar{width:200px;height:90px;border:1px solid var(--border);border-radius:8px;background:#fff;cursor:pointer;padding:8px;display:flex;align-items:center;justify-content:center}
+.sgUsar:hover{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.sgUsar img{max-width:100%;max-height:100%}
+.sgGuardar{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}
+/* sumário (marcadores do PDF) na lateral */
+.abas2{display:flex;gap:2px;margin:8px 10px 2px;padding:2px;border-radius:6px;background:var(--panel-2)}
+.abas2 button{flex:1;border:0;background:none;padding:5px 6px;border-radius:5px;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
+.abas2 button[aria-selected=true]{background:var(--panel);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.sumario{flex:1;min-height:0;overflow:auto;padding:6px 6px 14px;font-size:13px}
+.sumario .it{display:flex;align-items:flex-start;gap:2px}
+.sumario .it>button.ab{flex:none;width:20px;height:24px;border:0;background:none;color:var(--muted);cursor:pointer;padding:0}
+.sumario .it>button.ab[aria-expanded=false] svg{transform:rotate(-90deg)}
+.sumario .it>button.vai{flex:1;text-align:left;border:0;background:none;padding:4px 6px;border-radius:5px;font:inherit;color:var(--text);cursor:pointer;line-height:1.35}
+.sumario .it>button.vai:hover{background:var(--subtle,var(--panel-2))}
+.sumario .filhos{padding-left:14px}
+.thumbs.ver-sum .tb,.thumbs.ver-sum .tlist{display:none}
+.layer.t-select{pointer-events:none}
+.layer.t-select>*{pointer-events:auto}
 .right{background:var(--panel);border-left:1px solid var(--border);padding:16px;overflow-y:auto}
 .right h2{font-size:12px;margin:0 0 12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
 .right label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px;font-weight:500}
@@ -531,7 +589,11 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
   <div class="main" id="mainGrid">
     <nav class="rail" id="rail" aria-label="Ferramentas"></nav>
     <aside class="thumbs" aria-label="Páginas">
-      <h3>Páginas</h3>
+      <h3 id="thTitulo">Páginas</h3>
+      <div class="abas2" id="thAbas" hidden role="tablist" aria-label="Lateral">
+        <button role="tab" data-aba="pg" aria-selected="true">Páginas</button><button role="tab" data-aba="sum" aria-selected="false">Sumário</button>
+      </div>
+      <div class="sumario" id="sumario" hidden></div>
       <div class="tb" role="toolbar" aria-label="Organizar páginas">
         <button class="btn" data-pg="ccw" aria-label="Girar à esquerda" title="Girar à esquerda"><svg class="i"><use href="#i-ccw"/></svg></button>
         <button class="btn" data-pg="cw" aria-label="Girar à direita" title="Girar à direita"><svg class="i"><use href="#i-cw"/></svg></button>
@@ -551,6 +613,8 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
           <h1 id="hello">Olá, vamos trabalhar!</h1>
           <p>O que você quer fazer com o PDF hoje? Edite o texto, converta para Word, junte e organize páginas. Tudo roda no seu computador: o arquivo não é enviado a lugar nenhum.</p>
         </div>
+        <div class="recuperar" id="recuperar" hidden role="status"><svg class="i"><use href="#i-file"/></svg><span class="rctx"></span><button class="btn primary sm" id="rcSim">Recuperar</button><button class="btn sm" id="rcNao">Descartar</button></div>
+        <section class="recentes" id="recentes" hidden aria-labelledby="rcT"><h2 id="rcT">Recentes</h2><div class="rlist"></div></section>
         <div class="cards" id="cards">
           <button class="card" data-act="edit"><span class="ci c1"><svg class="i"><use href="#i-edit"/></svg></span><span><b>Editar PDF</b><span class="d">Troque textos, adicione imagens e anote.</span></span></button>
           <button class="card" data-act="docx" id="cardDocx"><span class="ci c2"><svg class="i"><use href="#i-word"/></svg></span><span><b>Converter para Word</b><span class="d">Transforma o PDF em um arquivo .docx editável.</span></span></button>
@@ -667,11 +731,39 @@ function b64ToBytes(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<
 // No celular (ou com ?motor=js) não há servidor: o motor MuPDF.js roda dentro da própria página
 const MOTOR_LOCAL=!!window.APP_CELULAR||!!window.APP_WEB||new URLSearchParams(location.search).get('motor')==='js';
 let MOTOR=null;
-async function api(path,body){
-  if(MOTOR)return MOTOR.chamar(path,body);
+// O PDF vai como bytes (body.pdf = Uint8Array): no motor do celular passa direto; no servidor vai uma vez só
+// (POST /api/doc) e as chamadas seguintes mandam só o número. O PDF que volta chega em j.pdfBytes.
+const DOCS=new WeakMap();
+async function postJson(path,body){
   const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   let j={};try{j=await r.json()}catch(e){}
-  if(!r.ok)throw new Error(j.error||('erro '+r.status));return j;
+  if(!r.ok){const e=new Error(j.error||('erro '+r.status));e.status=r.status;throw e}return j;
+}
+function numeroDoc(bytes){
+  let p=DOCS.get(bytes);if(p)return p;
+  p=(async()=>{
+    const r=await fetch('/api/doc',{method:'POST',headers:{'Content-Type':'application/pdf'},body:bytes});
+    const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('erro '+r.status));return j.id;
+  })();
+  p.catch(()=>DOCS.delete(bytes));DOCS.set(bytes,p);return p;
+}
+// logo que o PDF abre, já vai para o servidor em segundo plano: o primeiro clique em "Editar texto" não espera o envio
+function adiantarDoc(bytes){if(S.srv&&!MOTOR&&bytes)numeroDoc(bytes).catch(()=>{})}
+async function api(path,body){
+  const bin=body&&body.pdf instanceof Uint8Array;
+  if(MOTOR){const j=await MOTOR.chamar(path,body);if(j&&typeof j.pdf==='string'&&!j.pdfBytes)j.pdfBytes=b64ToBytes(j.pdf);return j}
+  if(!bin){const j=await postJson(path,body);if(j&&typeof j.pdf==='string')j.pdfBytes=b64ToBytes(j.pdf);return j}
+  for(let tent=0;;tent++){
+    const id=await numeroDoc(body.pdf);
+    try{
+      const j=await postJson(path,{...body,pdf:undefined,doc:id});
+      if(j.doc){ // PDF novo: baixa em bytes e já fica guardado no servidor com este número
+        const r=await fetch('/api/doc/'+j.doc);if(!r.ok)throw new Error('erro '+r.status);
+        j.pdfBytes=new Uint8Array(await r.arrayBuffer());DOCS.set(j.pdfBytes,Promise.resolve(j.doc));
+      }
+      return j;
+    }catch(e){if(e.status===410&&tent<1){DOCS.delete(body.pdf);continue}throw e}
+  }
 }
 const FAMILY={Helvetica:'sans',Times:'serif',Courier:'mono'};
 async function detectServer(){
@@ -690,7 +782,7 @@ async function detectServer(){
   if(!/^https?:$/.test(location.protocol)){basic('Abra pelo arquivo "Abrir editor.bat" para ativar o modo avançado: o texto antigo é apagado de verdade do PDF.');return}
   try{
     const r=await fetch('/api/ping',{cache:'no-store'});const j=await r.json();
-    if(j&&j.ok){S.srv=true;S.docx=j.docx!==false;S.ocr=!!j.ocr;S.idiomas=j.idiomas||[];S.office=j.office||[];S.navegador=!!j.navegador;S.pdfa=!!j.pdfa;S.assinatura=!!j.assinatura;updateHome();renderToolsHome();badge.textContent='Modo avançado';badge.className='badge adv';badge.title='Servidor local ativo: o texto antigo é removido de verdade e a fonte original do PDF é reaproveitada quando possível.';renderProps();return}
+    if(j&&j.ok){S.srv=true;S.versaoApp=j.versao||null;S.docx=j.docx!==false;S.ocr=!!j.ocr;S.idiomas=j.idiomas||[];S.office=j.office||[];S.navegador=!!j.navegador;S.pdfa=!!j.pdfa;S.assinatura=!!j.assinatura;updateHome();renderToolsHome();badge.textContent='Modo avançado';badge.className='badge adv';badge.title='Servidor local ativo: o texto antigo é removido de verdade e a fonte original do PDF é reaproveitada quando possível.';renderProps();return}
   }catch(e){}
   basic('Servidor local não encontrado. Abra pelo "Abrir editor.bat" para ativar o modo avançado.');
 }
@@ -699,6 +791,7 @@ async function detectServer(){
 const S={srv:false,doc:null,bytes:null,pages:[],scale:1,tool:'select',objs:[],sel:null,hist:[],hi:-1,name:'',fit:true,
   pagesSel:new Set([0]),cur:0,busy:false,warned:false,defaults:{fs:14,font:'Helvetica',bold:false,italic:false,color:'#000000',stroke:'#e53935',sw:2,hl:'#ffeb3b'},
   form:{},hasForm:false,flatten:false,hits:[]};
+let recT=null,recBytes=null,histN=0; // recuperação automática e contador do histórico (usados desde o início)
 // há alterações ainda não gravadas no PDF? (objetos desenhados ou campos de formulário preenchidos)
 const dirty=()=>S.objs.length>0||Object.keys(S.form).length>0||S.flatten;
 const TOOLS=[
@@ -720,7 +813,7 @@ async function openDoc(bytes,{keepView=false}={}){
   S.pagesSel=new Set([...S.pagesSel].filter(i=>i<S.pages.length));if(!S.pagesSel.size)S.pagesSel.add(Math.max(0,S.cur));
   $('#drop').style.display='none';$('#mainGrid').classList.remove('is-home'); // os painéis voltam antes de calcular o ajuste à largura
   if(S.fit&&!keepView)fitWidth(true);
-  buildPages();buildThumbs();updateChrome();renderOrganizer();
+  buildPages();buildThumbs();updateChrome();renderOrganizer();montarSumario();
   if(S.hasForm&&!keepView)setTimeout(()=>toast('Este PDF tem campos de formulário: clique neles para preencher.'),400);
 }
 async function openFile(file){
@@ -729,9 +822,12 @@ async function openFile(file){
   busy(true);
   try{
     const bytes=new Uint8Array(await file.arrayBuffer());
+    // aberto pelo Windows: o servidor já tem este arquivo guardado, não precisa mandar de novo
+    if(file.docServidor)DOCS.set(bytes,Promise.resolve(file.docServidor));else setTimeout(()=>adiantarDoc(bytes),800); // depois que as primeiras páginas aparecem
     S.name=file.name.replace(/\.pdf$/i,'');S.objs=[];S.sel=null;S.cur=0;S.pagesSel=new Set([0]);S.warned=false;S.fit=true;S.form={};S.flatten=false;S.hits=[];
     await openDoc(bytes);
-    S.hist=[{bytes,objs:[]}];S.hi=0;updateChrome();
+    S.hist=[{bytes,objs:[]}];S.hi=0;S.recSalvo=chaveEdicao();updateChrome();
+    if(file.recente)anotarRecente(file,bytes);
     $('#fname').textContent=file.name;$('#docChip').classList.add('on');document.title=file.name+' — Editor de PDF';
     const next=S.afterOpen;S.afterOpen=null;if(next)setTimeout(next,60);
   }catch(e){
@@ -746,25 +842,38 @@ function busy(on,msg){let b=$('.busy');
   S.busy=on}
 /* volta para a tela inicial (fecha o documento aberto) */
 async function goHome(){
-  if(S.doc&&(dirty()||S.hist.length>1)&&!confirm('Fechar este PDF? As alterações que você ainda não salvou serão perdidas.'))return;
+  if(S.doc&&(dirty()||S.hist.length>1)&&chaveEdicao()!==S.recSalvo){
+    if(!confirm('Fechar este PDF? As alterações que você ainda não salvou serão perdidas.'))return;
+    esquecerRecuperacao();
+  }
+  mostrarRecentes();
   if(S.doc){try{await S.doc.destroy()}catch(e){}}
   saudacao();
   S.doc=null;S.bytes=null;S.pages=[];S.objs=[];S.sel=null;S.hist=[];S.hi=-1;S.name='';S.cur=0;S.pagesSel=new Set([0]);S.form={};S.hasForm=false;S.hits=[];
-  closeOrganizer();document.title='Editor de PDF';
+  closeOrganizer();document.title='Editor de PDF';abaLateral('pg');$('#thAbas').hidden=true;$('#thTitulo').hidden=false;$('#sumario').innerHTML='';
   $('#pages').innerHTML='';$('#tlist').innerHTML='';$('#fname').textContent='';$('#docChip').classList.remove('on');
   $('#drop').style.display='';setTool('select');updateChrome();
 }
 
 /* ================= páginas ================= */
-let io=null;
+let io=null,longeIO=null;
+// página que ficou bem longe da tela solta a imagem (em PDFs grandes a memória não cresce sem parar)
+function liberarPagina(i){
+  const pg=S.pages[i];if(!pg||!pg.el||!pg.rendered)return;
+  try{if(pg.task)pg.task.cancel()}catch(e){}
+  const c=$('canvas',pg.el);c.width=c.height=0;pg.rendered=false;
+}
 function buildPages(){
   const host=$('#pages');host.innerHTML='';
-  if(io)io.disconnect();
+  if(io)io.disconnect();if(longeIO)longeIO.disconnect();
   io=new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting)renderPage(+e.target.dataset.i)}},{root:$('#view'),rootMargin:'600px 0px'});
+  longeIO=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)liberarPagina(+e.target.dataset.i)}},{root:$('#view'),rootMargin:'3000px 0px'});
   S.pages.forEach((pg,i)=>{
     const d=document.createElement('div');d.className='page';d.dataset.i=i;d.setAttribute('aria-label','Página '+(i+1));
-    d.innerHTML='<canvas></canvas><div class="layer"></div>';
-    host.appendChild(d);pg.el=d;pg.rendered=false;sizePage(i);bindLayer(i);renderLayer(i);io.observe(d);
+    d.innerHTML='<canvas></canvas><div class="textLayer"></div><div class="layer"></div>';
+    host.appendChild(d);pg.el=d;pg.rendered=false;pg.txt=false;sizePage(i);
+    // clique fora de um objeto, com Selecionar: tira a seleção (a camada de objetos deixa o clique passar)
+    d.addEventListener('pointerdown',e=>{if(S.tool==='select'&&S.sel&&!e.target.closest('.o')){const p=objById(S.sel);S.sel=null;if(p)renderLayer(p.page);renderProps()}});bindLayer(i);renderLayer(i);io.observe(d);longeIO.observe(d);
   });
   applyToolClass();
 }
@@ -772,6 +881,7 @@ function sizePage(i){
   const pg=S.pages[i],d=pg.el,w=pg.w*S.scale,h=pg.h*S.scale;
   d.style.width=w+'px';d.style.height=h+'px';
   const L=$('.layer',d);L.style.width=pg.w+'px';L.style.height=pg.h+'px';L.style.transform=`scale(${S.scale})`;
+  const T=$('.textLayer',d);if(T){T.style.width=pg.w+'px';T.style.height=pg.h+'px';T.style.transform=`scale(${S.scale})`}
   const c=$('canvas',d);c.style.width=w+'px';c.style.height=h+'px';
 }
 async function renderPage(i){
@@ -783,6 +893,33 @@ async function renderPage(i){
   // com formulário, os campos são desenhados pelo editor (para dar para preencher), não na imagem da página
   pg.task=pg.page.render({canvasContext:c.getContext('2d'),viewport:vp,annotationMode:S.hasForm?pdfjsLib.AnnotationMode.ENABLE_FORMS:pdfjsLib.AnnotationMode.ENABLE});
   try{await pg.task.promise}catch(e){if(e&&e.name!=='RenderingCancelledException'){pg.rendered=false;console.error(e)}}
+  if(!pg.txt)camadaTexto(i);
+}
+// texto selecionável e links da página (uma vez por página; fica em escala 1 e acompanha o zoom pela transformação)
+async function camadaTexto(i){
+  const pg=S.pages[i];if(!pg||pg.txt||!pg.el)return;pg.txt=true;
+  const T=$('.textLayer',pg.el),doc=S.doc;
+  try{
+    const vp=pg.page.getViewport({scale:1});
+    await pdfjsLib.renderTextLayer({textContentSource:pg.page.streamTextContent(),container:T,viewport:vp}).promise;
+    const fim=document.createElement('div');fim.className='endOfContent';T.appendChild(fim);
+    T.addEventListener('mousedown',()=>fim.classList.add('active'));document.addEventListener('mouseup',()=>fim.classList.remove('active'));
+    for(const a of await pg.page.getAnnotations({intent:'display'})){
+      if(a.subtype!=='Link'||(!a.url&&!a.dest&&a.dest!==0))continue;
+      const [x1,y1,x2,y2]=vp.convertToViewportRectangle(a.rect);
+      const el=document.createElement('a');el.className='lnk';
+      Object.assign(el.style,{left:Math.min(x1,x2)+'px',top:Math.min(y1,y2)+'px',width:Math.abs(x2-x1)+'px',height:Math.abs(y2-y1)+'px'});
+      if(a.url){el.href=a.url;el.target='_blank';el.rel='noopener noreferrer';el.title=a.url}
+      else{el.href='#';el.title='Ir para a página';el.onclick=async e=>{e.preventDefault();const n=await paginaDoDestino(doc,a.dest);if(n!=null)scrollToPage(n)}}
+      T.appendChild(el);
+    }
+  }catch(e){if(S.doc===doc)console.error(e)}
+}
+async function paginaDoDestino(doc,dest){
+  try{
+    const d=typeof dest==='string'?await doc.getDestination(dest):dest;if(!d)return null;
+    return typeof d[0]==='number'?d[0]:await doc.getPageIndex(d[0]);
+  }catch(e){return null}
 }
 function setScale(s,keepFit){
   S.scale=Math.max(.25,Math.min(4,s));if(!keepFit)S.fit=false;
@@ -799,11 +936,53 @@ function fitWidth(silent){
 }
 function pageAt(i){return S.pages[i]}
 function scrollToPage(i){const pg=S.pages[i];if(pg&&pg.el)pg.el.scrollIntoView({block:'start'})}
+// página atual = a que está no topo da tela; busca binária pela posição (rápido mesmo com centenas de páginas)
+let rolarPendente=false;
 $('#view').addEventListener('scroll',()=>{
-  const v=$('#view').getBoundingClientRect();let best=0,bd=1e9;
-  S.pages.forEach((pg,i)=>{if(!pg.el)return;const r=pg.el.getBoundingClientRect();const d=Math.abs(r.top-v.top-20);if(d<bd){bd=d;best=i}});
-  if(best!==S.cur){S.cur=best;$('#pno').value=best+1;markThumbs()}
+  if(rolarPendente)return;rolarPendente=true;
+  requestAnimationFrame(()=>{
+    rolarPendente=false;const ps=S.pages;if(!ps.length||!ps[0].el)return;
+    const y=$('#view').scrollTop+20;let a=0,b=ps.length-1;
+    while(a<b){const m=(a+b+1)>>1;if(ps[m].el&&ps[m].el.offsetTop<=y)a=m;else b=m-1}
+    const n=ps[a+1]&&ps[a+1].el&&Math.abs(ps[a+1].el.offsetTop-y)<Math.abs(ps[a].el.offsetTop-y)?a+1:a;
+    if(n!==S.cur){S.cur=n;$('#pno').value=n+1;markThumbs()}
+  });
 },{passive:true});
+
+/* ================= sumário (marcadores) ================= */
+function abaLateral(aba){
+  $('.thumbs').classList.toggle('ver-sum',aba==='sum');$('#sumario').hidden=aba!=='sum';
+  $$('#thAbas button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.aba===aba)));
+}
+$('#thAbas').addEventListener('click',e=>{const b=e.target.closest('button[data-aba]');if(b)abaLateral(b.dataset.aba)});
+async function montarSumario(){
+  const doc=S.doc,box=$('#sumario');let itens=null;
+  try{itens=await doc.getOutline()}catch(e){}
+  if(doc!==S.doc)return;
+  const tem=!!(itens&&itens.length);
+  $('#thAbas').hidden=!tem;$('#thTitulo').hidden=tem;
+  if(!tem){abaLateral('pg');box.innerHTML='';return}
+  const nivel=(lista,prof)=>{
+    const frag=document.createDocumentFragment();
+    for(const it of lista){
+      const w=document.createElement('div');w.className='it';
+      const sub=it.items&&it.items.length;
+      if(sub){const ab=document.createElement('button');ab.className='ab';ab.setAttribute('aria-expanded',prof<1?'true':'false');ab.setAttribute('aria-label','Abrir ou fechar');ab.innerHTML='<svg class="i" style="width:14px;height:14px"><use href="#i-chev"/></svg>';w.appendChild(ab)}
+      else{const sp=document.createElement('span');sp.style.cssText='width:20px;flex:none';w.appendChild(sp)}
+      const vai=document.createElement('button');vai.className='vai';vai.textContent=it.title||'(sem título)';
+      if(it.bold)vai.style.fontWeight='600';if(it.italic)vai.style.fontStyle='italic';
+      vai.onclick=async()=>{
+        if(it.url){window.open(it.url,'_blank','noopener');return}
+        const n=await paginaDoDestino(doc,it.dest);if(n!=null){S.cur=n;S.pagesSel=new Set([n]);markThumbs();scrollToPage(n)}
+      };
+      w.appendChild(vai);frag.appendChild(w);
+      if(sub){const f=document.createElement('div');f.className='filhos';f.hidden=prof>=1;f.appendChild(nivel(it.items,prof+1));frag.appendChild(f);
+        w.firstChild.onclick=()=>{const ab=w.firstChild,abre=ab.getAttribute('aria-expanded')!=='true';ab.setAttribute('aria-expanded',String(abre));f.hidden=!abre}}
+    }
+    return frag;
+  };
+  box.innerHTML='';box.appendChild(nivel(itens,0));
+}
 
 /* ================= miniaturas e organização ================= */
 let thumbIO=null,dragFrom=null;
@@ -905,7 +1084,7 @@ $('#mergeIn').addEventListener('change',async e=>{
 /* ================= histórico ================= */
 function pushHist(force){
   S.hist=S.hist.slice(0,S.hi+1);
-  S.hist.push({bytes:S.bytes,objs:clone(S.objs)});
+  S.hist.push({bytes:S.bytes,objs:clone(S.objs),n:++histN});
   if(S.hist.length>40)S.hist.shift();
   S.hi=S.hist.length-1;updateChrome();
 }
@@ -924,7 +1103,7 @@ function updateChrome(){
   $('#mainGrid').classList.toggle('is-home',!S.doc);$('.status').style.visibility=S.doc?'visible':'hidden';
   $('#bSave').disabled=!S.doc;$('#bExport').disabled=!S.doc;$('#bPrint').disabled=!S.doc;$('#bFind').disabled=!S.doc;$('#bOrg').disabled=!S.doc;$$('.thumbs .tb .btn').forEach(b=>b.disabled=!S.doc);
   $('#ptot').textContent='/ '+S.pages.length;$('#zVal').textContent=Math.round(S.scale*100)+'%';
-  renderProps();
+  renderProps();anotarRecuperacao();
 }
 
 /* ================= objetos ================= */
@@ -1111,7 +1290,7 @@ async function getBlocks(i){
   if(!pg.blocksP){
     pg.blocksP=(async()=>{
       if((pg.page.rotate||0)!==0)return null; // páginas giradas: modo básico
-      try{const j=await api('/api/analyze',{pdf:bytesToB64(S.bytes),page:i});return j.rotated?null:j.blocks}
+      try{const j=await api('/api/analyze',{pdf:S.bytes,page:i});return j.rotated?null:j.blocks}
       catch(e){console.error(e);return null}
     })();
   }
@@ -1208,13 +1387,16 @@ async function fileToPng(f){
 /* ---- Assinatura ---- */
 function openSign(){
   if(!S.doc){toast('Abra um PDF primeiro.',true);setTool('select');return}
+  const salvas=assinaturasSalvas();
   const bg=document.createElement('div');bg.className='modal-bg';
   bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true" aria-labelledby="sgt"><h2 id="sgt">Sua assinatura</h2>
-  <div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-t="draw">Desenhar</button><button role="tab" aria-selected="false" data-t="type">Digitar</button><button role="tab" aria-selected="false" data-t="up">Enviar imagem</button></div>
-  <div id="sgDraw"><canvas id="sigpad" width="900" height="360" aria-label="Área para desenhar a assinatura"></canvas><button class="btn sm" id="sgClear" style="margin-top:6px">Limpar</button></div>
+  <div class="tabs" role="tablist">${salvas.length?'<button role="tab" aria-selected="true" data-t="saved">Salvas</button>':''}<button role="tab" aria-selected="${salvas.length?'false':'true'}" data-t="draw">Desenhar</button><button role="tab" aria-selected="false" data-t="type">Digitar</button><button role="tab" aria-selected="false" data-t="up">Enviar imagem</button></div>
+  <div id="sgSaved" ${salvas.length?'':'hidden'}><p class="hint">Clique numa assinatura para usar.</p><div class="sgLista">${salvas.map((s,k)=>`<div class="sgItem"><button class="sgUsar" data-k="${k}" aria-label="Usar esta assinatura"><img src="${s}" alt=""></button><button class="btn sm sgApagar" data-k="${k}" aria-label="Apagar esta assinatura" title="Apagar"><svg class="i"><use href="#i-trash"/></svg></button></div>`).join('')}</div></div>
+  <div id="sgDraw" ${salvas.length?'hidden':''}><canvas id="sigpad" width="900" height="360" aria-label="Área para desenhar a assinatura"></canvas><button class="btn sm" id="sgClear" style="margin-top:6px">Limpar</button></div>
   <div id="sgType" hidden><label for="sgTxt" class="sr">Nome</label><input id="sgTxt" type="text" placeholder="Digite seu nome" style="width:100%;height:44px;font-size:22px;padding:0 10px;border:1px solid var(--border);border-radius:8px"><div id="sgPrev" style="font:italic 44px 'Brush Script MT','Segoe Script',cursive;padding:14px 4px;min-height:80px"></div></div>
   <div id="sgUp" hidden><p class="hint">Escolha uma foto da sua assinatura em fundo claro.</p><input id="sgFile" type="file" accept="image/*"></div>
-  <div class="foot"><button class="btn" id="sgCancel">Cancelar</button><button class="btn primary" id="sgOk">Usar assinatura</button></div></div>`;
+  <label class="sgGuardar" id="sgGuardarL" ${salvas.length?'hidden':''}><input type="checkbox" id="sgGuardar" checked> Guardar esta assinatura para as próximas vezes (só neste aparelho)</label>
+  <div class="foot"><button class="btn" id="sgCancel">Cancelar</button><button class="btn primary" id="sgOk" ${salvas.length?'hidden':''}>Usar assinatura</button></div></div>`;
   document.body.appendChild(bg);
   const pad=$('#sigpad',bg),ctx=pad.getContext('2d');ctx.lineWidth=5;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#111';
   let down=false,any=false;
@@ -1223,8 +1405,17 @@ function openSign(){
   pad.addEventListener('pointermove',e=>{if(!down)return;const[x,y]=pp(e);ctx.lineTo(x,y);ctx.stroke()});
   pad.addEventListener('pointerup',()=>{down=false});
   $('#sgClear',bg).onclick=()=>{ctx.clearRect(0,0,pad.width,pad.height);any=false};
-  let tab='draw',upSrc=null;
-  $$('.tabs button',bg).forEach(b=>b.onclick=()=>{tab=b.dataset.t;$$('.tabs button',bg).forEach(x=>x.setAttribute('aria-selected',String(x===b)));$('#sgDraw',bg).hidden=tab!=='draw';$('#sgType',bg).hidden=tab!=='type';$('#sgUp',bg).hidden=tab!=='up'});
+  let tab=salvas.length?'saved':'draw',upSrc=null;
+  $$('.tabs button',bg).forEach(b=>b.onclick=()=>{tab=b.dataset.t;$$('.tabs button',bg).forEach(x=>x.setAttribute('aria-selected',String(x===b)));$('#sgSaved',bg).hidden=tab!=='saved';$('#sgDraw',bg).hidden=tab!=='draw';$('#sgType',bg).hidden=tab!=='type';$('#sgUp',bg).hidden=tab!=='up';
+    $('#sgOk',bg).hidden=tab==='saved';$('#sgGuardarL',bg).hidden=tab==='saved'});
+  const colocar=async src=>{
+    const im=await loadImg(src);const pg=S.pages[S.cur];const w=Math.min(180,pg.w*.4),h=w*im.height/im.width;
+    bg.remove();
+    addObj({page:S.cur,type:'img',x:(pg.w-w)/2,y:(pg.h-h)/2,w,h,src,ratio:im.width/im.height,mime:'png'});
+    setTool('select');
+  };
+  $$('.sgUsar',bg).forEach(b=>b.onclick=()=>colocar(salvas[+b.dataset.k]));
+  $$('.sgApagar',bg).forEach(b=>b.onclick=()=>{const k=+b.dataset.k;guardarAssinaturas(assinaturasSalvas().filter((_,j)=>j!==k));b.closest('.sgItem').remove();toast('Assinatura apagada.')});
   $('#sgTxt',bg).oninput=e=>{$('#sgPrev',bg).textContent=e.target.value};
   $('#sgFile',bg).onchange=async e=>{const f=e.target.files[0];if(f){try{upSrc=await fileToPng(f)}catch(err){toast('Imagem inválida.',true)}}};
   const close=()=>{bg.remove();setTool('select')};
@@ -1235,13 +1426,14 @@ function openSign(){
     else if(tab==='type'){const t=$('#sgTxt',bg).value.trim();if(!t){toast('Digite seu nome.',true);return}
       const c=document.createElement('canvas');const x=c.getContext('2d');const f="italic 90px 'Brush Script MT','Segoe Script',cursive";x.font=f;c.width=Math.ceil(x.measureText(t).width)+30;c.height=140;x.font=f;x.fillStyle='#111';x.textBaseline='middle';x.fillText(t,15,70);src=trimCanvas(c)}
     else{if(!upSrc){toast('Escolha uma imagem.',true);return}src=upSrc}
-    const im=await loadImg(src);const pg=S.pages[S.cur];const w=Math.min(180,pg.w*.4),h=w*im.height/im.width;
-    bg.remove();
-    addObj({page:S.cur,type:'img',x:(pg.w-w)/2,y:(pg.h-h)/2,w,h,src,ratio:im.width/im.height,mime:'png'});
-    setTool('select');
+    if($('#sgGuardar',bg).checked)guardarAssinaturas([src,...assinaturasSalvas().filter(s=>s!==src)].slice(0,4));
+    await colocar(src);
   };
-  $('#sgTxt',bg).focus();
+  if(!salvas.length)$('#sgTxt',bg).focus();else{const u=$('.sgUsar',bg);if(u)u.focus()}
 }
+// assinaturas guardadas neste aparelho (até 4), para não precisar desenhar toda vez
+function assinaturasSalvas(){try{const a=JSON.parse(localStorage.getItem('editorpdf-assinaturas')||'[]');return Array.isArray(a)?a.filter(s=>typeof s==='string'&&s.startsWith('data:image/')):[]}catch(e){return[]}}
+function guardarAssinaturas(a){try{localStorage.setItem('editorpdf-assinaturas',JSON.stringify(a))}catch(e){toast('Não deu para guardar a assinatura neste aparelho.',true)}}
 function trimCanvas(c){
   const ctx=c.getContext('2d'),d=ctx.getImageData(0,0,c.width,c.height).data;let x0=c.width,y0=c.height,x1=0,y1=0;
   for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){if(d[(y*c.width+x)*4+3]>10){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}
@@ -1407,7 +1599,7 @@ function openFind(){
     const termo=$('#fdBusca',bg).value;if(!termo.trim()){S.hits=[];S.pages.forEach((_,i)=>renderLayer(i));$('#fdN',bg).textContent='—';return}
     const maiusc=$('#fdCase',bg).checked,inteira=$('#fdWord',bg).checked;let list=[];
     try{
-      if(S.srv){let by=S.bytes;const j=await api('/api/buscar',{pdf:bytesToB64(by),opcoes:{termos:[termo],maiusculas:maiusc,inteira}});list=j.resultados||[]}
+      if(S.srv){let by=S.bytes;const j=await api('/api/buscar',{pdf:by,opcoes:{termos:[termo],maiusculas:maiusc,inteira}});list=j.resultados||[]}
       else list=await textoBusca(termo,maiusc,inteira);
     }catch(e){toast(e.message,true)}
     k=0;$('#fdN',bg).textContent=list.length?`1 de ${list.length}`:'nada';showHits(list);
@@ -1444,7 +1636,7 @@ function openAutoRedact(){
       const padroes=$$('input[name=tjp]:checked',bg).map(x=>x.value),termos=$('#tjT',bg).value;
       if(!padroes.length&&!termos.trim()){toast('Marque o que procurar ou digite uma palavra.',true);return false}
       (async()=>{busy(true,'Procurando…');
-        try{const j=await api('/api/buscar',{pdf:bytesToB64(S.bytes),opcoes:{padroes,termos,maiusculas:$('#tjCase',bg).checked}});
+        try{const j=await api('/api/buscar',{pdf:S.bytes,opcoes:{padroes,termos,maiusculas:$('#tjCase',bg).checked}});
           const r=j.resultados||[];
           for(const h of r){const [x0,y0,x1,y1]=h.rect;S.objs.push({id:uid(),page:h.pagina,type:'redact',x:x0-1,y:y0-1,w:x1-x0+2,h:y1-y0+2,fill:'#000000',auto:h.rotulo})}
           S.pages.forEach((_,i)=>renderLayer(i));pushHist();renderProps();
@@ -1608,8 +1800,8 @@ async function bake(bytes,objs){
     }
     if(ops.length){
       try{
-        const j=await api('/api/apply',{pdf:bytesToB64(bytes),ops});
-        bytes=b64ToBytes(j.pdf);(j.warnings||[]).forEach(w=>toast(w,true));
+        const j=await api('/api/apply',{pdf:bytes,ops});
+        bytes=j.pdfBytes;(j.warnings||[]).forEach(w=>toast(w,true));
       }catch(e){
         handled.clear();console.error(e);
         toast('O servidor não conseguiu aplicar as trocas ('+e.message+'). Usei o modo básico: o texto antigo só ficou coberto.',true);
@@ -1665,7 +1857,8 @@ function download(bytes,name,mime){
   }
   if(window.pywebview&&pywebview.api&&pywebview.api.salvar){ // app do Windows: janela "Salvar como" do próprio Windows
     const b=bytesToB64(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes));
-    pywebview.api.salvar(name,b).then(r=>{if(r&&r.erro)toast('Não foi possível salvar: '+r.erro,true);else if(r&&r.caminho)toast('Salvo em '+r.caminho)})
+    const depois=S.aposSalvar;S.aposSalvar=null;
+    pywebview.api.salvar(name,b).then(r=>{if(r&&r.erro)toast('Não foi possível salvar: '+r.erro,true);else if(r&&r.caminho){toast('Salvo em '+r.caminho);if(depois)depois()}})
       .catch(e=>toast('Não foi possível salvar: '+(e&&e.message||e),true));
     return 'janela';
   }
@@ -1679,14 +1872,18 @@ function download(bytes,name,mime){
   const u=URL.createObjectURL(new Blob([bytes],{type:mime||'application/pdf'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'baixado'}
 async function save(){
   if(!S.doc||S.busy)return;busy(true);
-  try{const out=dirty()?await bake(S.bytes,S.objs):S.bytes;if(download(out,(S.name||'documento')+'-editado.pdf')==='baixado')toast('PDF salvo na pasta de downloads.')}
+  try{const out=dirty()?await bake(S.bytes,S.objs):S.bytes;const chave=chaveEdicao();
+    const salvo=()=>{S.recSalvo=chave;esquecerRecuperacao()}; // salvo: a recuperação não é mais necessária
+    S.aposSalvar=salvo;const r=download(out,(S.name||'documento')+'-editado.pdf');
+    if(r!=='janela'){S.aposSalvar=null;salvo()}
+    if(r==='baixado')toast('PDF salvo na pasta de downloads.')}
   catch(e){console.error(e);toast('Não foi possível salvar: '+(e&&e.message||e),true)}
   finally{busy(false)}
 }
 
 /* ================= eventos gerais ================= */
-$('#bOpen').onclick=()=>{S.afterOpen=null;$('#fileIn').click()};
-$('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';openFile(f)});
+$('#bOpen').onclick=()=>{S.afterOpen=null;escolherPdf()};
+$('#fileIn').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)f.recente=true;openFile(f)});
 $('#bHome').onclick=goHome;
 
 /* ================= tela inicial ================= */
@@ -1732,7 +1929,7 @@ $('#cards').addEventListener('click',e=>{
   if(a==='merge'){$('#homeMergeIn').click();return}
   S.afterOpen={edit:()=>setTool('edittext'),docx:()=>openConvert(),ocr:()=>openOcr(),sign:()=>setTool('sign'),redact:()=>setTool('redact'),
     pages:()=>openOrganizer()}[a]||null;
-  $('#fileIn').click();
+  escolherPdf();
 });
 $('#homeMergeIn').addEventListener('change',async e=>{
   const files=[...e.target.files];e.target.value='';
@@ -1856,9 +2053,9 @@ function openOcr(){
 async function runOcr(paginas,idioma,pular){
   const alvo=paginas?paginas.length:S.pages.length;
   await pageOp(async bytes=>{
-    const j=await api('/api/ocr',{pdf:bytesToB64(bytes),paginas,idioma,pular_com_texto:pular});
+    const j=await api('/api/ocr',{pdf:bytes,paginas,idioma,pular_com_texto:pular});
     setTimeout(()=>{toast(j.reconhecidas?`Texto reconhecido em ${j.reconhecidas} página${j.reconhecidas>1?'s':''}. Agora dá para pesquisar e copiar.`:'Nenhuma página precisou de OCR.');(j.avisos||[]).forEach(w=>toast(w))},300);
-    return b64ToBytes(j.pdf);
+    return j.pdfBytes;
   },{sel:[...S.pagesSel],msg:`Reconhecendo texto em ${alvo} página${alvo>1?'s':''}…`});
 }
 
@@ -1882,7 +2079,7 @@ async function runConvert(scope){
   try{
     let bytes=dirty()?await bake(S.bytes,S.objs):S.bytes,suffix='';
     if(scope==='sel'){const sel=[...S.pagesSel].sort((a,b)=>a-b);bytes=await rebuild(bytes,sel.map(i=>({src:i})));suffix='-paginas'}
-    const j=await api('/api/pdf2docx',{pdf:bytesToB64(bytes),inicio:0});
+    const j=await api('/api/pdf2docx',{pdf:bytes,inicio:0});
     const ond=download(b64ToBytes(j.docx),(S.name||'documento')+suffix+'.docx','application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     toast(`Word gerado (${j.paginas} página${j.paginas>1?'s':''}).`+(ond==='baixado'?' Veja a pasta de downloads.':''));
     (j.avisos||[]).forEach(w=>toast(w,true));
@@ -1921,7 +2118,7 @@ $('#zIn').onclick=()=>setScale(S.scale*1.2);$('#zOut').onclick=()=>setScale(S.sc
 $('#pno').addEventListener('change',e=>{const n=Math.max(1,Math.min(S.pages.length,+e.target.value||1));S.cur=n-1;S.pagesSel=new Set([n-1]);markThumbs();scrollToPage(n-1)});
 ['dragenter','dragover'].forEach(ev=>$('#view').addEventListener(ev,e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();$('#dropbox').classList.add('over')}}));
 ['dragleave','drop'].forEach(ev=>$('#view').addEventListener(ev,()=>$('#dropbox').classList.remove('over')));
-$('#view').addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();openFile(e.dataTransfer.files[0])}});
+$('#view').addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();const f=e.dataTransfer.files[0];f.recente=true;openFile(f)}});
 window.addEventListener('resize',()=>{if(S.fit&&S.doc){fitWidth();setScale(S.scale,true)}});
 document.addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable;
@@ -2198,7 +2395,8 @@ window.abrirRecebido=async()=>{
   try{const r=await fetch('/recebido/arquivo?'+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('arquivo indisponível');
     const nome=window.AndroidApp?String(AndroidApp.nomeRecebido()):'documento.pdf';
     if(S.doc&&dirty()&&!confirm('Abrir “'+nome+'”? As alterações não salvas do PDF atual serão perdidas.'))return;
-    await openFile(new File([await r.arrayBuffer()],nome,{type:'application/pdf'}));
+    const f=new File([await r.arrayBuffer()],nome,{type:'application/pdf'});f.recente=true;
+    await openFile(f);
   }catch(e){toast('Não foi possível abrir o arquivo: '+e.message,true)}
 };
 if(new URLSearchParams(location.search).get('recebido')){history.replaceState(null,'',location.pathname);(async()=>{for(let i=0;i<80&&MOTOR_LOCAL&&!S.motorLocal;i++)await new Promise(r=>setTimeout(r,100));abrirRecebido()})()}
@@ -2213,15 +2411,134 @@ window.voltarAndroid=()=>{
   if(S.doc){goHome();return 'ok'}
   return 'sair';
 };
+/* ================= guardados neste aparelho: recentes e recuperação ================= */
+const BANCO=(()=>{
+  let p=null;
+  const abrir=()=>p||(p=new Promise((ok,er)=>{const r=indexedDB.open('editorpdf',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>{p=null;er(r.error)}}));
+  const op=(modo,f)=>abrir().then(db=>new Promise((ok,er)=>{const t=db.transaction('kv',modo),r=f(t.objectStore('kv'));t.oncomplete=()=>ok(r.result);t.onerror=t.onabort=()=>er(t.error)}));
+  return{get:k=>op('readonly',s=>s.get(k)),set:(k,v)=>op('readwrite',s=>s.put(v,k)),del:k=>op('readwrite',s=>s.delete(k))};
+})();
+// PDF registrado pelo aplicativo do Windows (duplo clique, janela Abrir ou recentes): o servidor entrega o arquivo
+async function abrirPorId(id){
+  const r=await fetch('/api/arquivo/'+id,{cache:'no-store'});if(!r.ok)throw new Error('arquivo não encontrado');
+  const nome=decodeURIComponent(r.headers.get('X-Nome')||'documento.pdf');
+  const f=new File([await r.arrayBuffer()],nome,{type:'application/pdf'});f.docServidor=r.headers.get('X-Doc');
+  const c=r.headers.get('X-Caminho');if(c)f.caminho=decodeURIComponent(c);f.recente=true;
+  await openFile(f);
+}
+// "Abrir": no app do Windows usa a janela Abrir do próprio Windows (assim o arquivo pode voltar pelos recentes)
+async function escolherPdf(){
+  if(window.pywebview&&pywebview.api&&pywebview.api.abrir){
+    try{const j=await pywebview.api.abrir();if(j&&j.id)await abrirPorId(j.id);else if(j&&j.erro)toast(j.erro,true);else S.afterOpen=null}
+    catch(e){toast('Não foi possível abrir: '+(e&&e.message||e),true)}
+    return;
+  }
+  $('#fileIn').click();
+}
+const MAX_RECENTES=8,MAX_COPIA=40e6;
+async function lerRecentes(){try{const l=await BANCO.get('recentes');return Array.isArray(l)?l:[]}catch(e){return[]}}
+// anota o PDF nos recentes: no Windows guarda só o caminho; no celular e no navegador guarda uma cópia (até 40 MB)
+async function anotarRecente(file,bytes){
+  try{
+    const chave=file.caminho||('copia:'+file.name+':'+bytes.length);
+    let l=await lerRecentes();const tinha=l.some(x=>x.chave===chave);l=l.filter(x=>x.chave!==chave);
+    if(!file.caminho){if(bytes.length>MAX_COPIA)return;if(!tinha)await BANCO.set('bytes:'+chave,new Blob([bytes],{type:'application/pdf'}))}
+    let capa=null;
+    try{const pg=S.pages[0].page,vp=pg.getViewport({scale:96/Math.max(S.pages[0].w,S.pages[0].h)});const c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);await pg.render({canvasContext:x,viewport:vp}).promise;capa=c.toDataURL('image/jpeg',.7)}catch(e){}
+    l.unshift({chave,nome:file.name,tam:bytes.length,quando:Date.now(),caminho:file.caminho||null,capa});
+    for(const x of l.slice(MAX_RECENTES))if(!x.caminho)BANCO.del('bytes:'+x.chave).catch(()=>{});
+    await BANCO.set('recentes',l.slice(0,MAX_RECENTES));mostrarRecentes();
+  }catch(e){console.warn('recentes',e)}
+}
+async function esquecerRecente(chave){
+  const l=(await lerRecentes()).filter(x=>x.chave!==chave);await BANCO.set('recentes',l);BANCO.del('bytes:'+chave).catch(()=>{});mostrarRecentes();
+}
+async function abrirRecente(it){
+  try{
+    if(it.caminho){
+      const j=window.pywebview&&pywebview.api&&pywebview.api.recente?await pywebview.api.recente(it.caminho):null;
+      if(!j||!j.id){toast(`Não encontrei “${it.nome}”. Ele pode ter sido movido ou apagado.`,true);esquecerRecente(it.chave);return}
+      await abrirPorId(j.id);return;
+    }
+    const b=await BANCO.get('bytes:'+it.chave);if(!b){toast('Esta cópia não está mais guardada.',true);esquecerRecente(it.chave);return}
+    const f=new File([b],it.nome,{type:'application/pdf'});f.recente=true;await openFile(f);
+  }catch(e){toast('Não foi possível abrir: '+(e&&e.message||e),true)}
+}
+function quandoTxt(t){const m=Math.round((Date.now()-t)/6e4);if(m<1)return'agora';if(m<60)return`há ${m} min`;const h=Math.round(m/60);if(h<24)return`há ${h} h`;const d=Math.round(h/24);return d===1?'ontem':d<30?`há ${d} dias`:new Date(t).toLocaleDateString('pt-BR')}
+async function mostrarRecentes(){
+  const box=$('#recentes');if(!box)return;const l=await lerRecentes();
+  box.hidden=!l.length;
+  $('.rlist',box).innerHTML=l.map((it,k)=>`<div class="rit"><button class="rabrir" data-k="${k}" title="${esc(it.caminho||it.nome)}">
+    <span class="rcapa">${it.capa?`<img src="${it.capa}" alt="">`:'<svg class="i"><use href="#i-file"/></svg>'}</span>
+    <span class="rtx"><b>${esc(it.nome)}</b><small>${quandoTxt(it.quando)} · ${it.tam<1048576?Math.max(1,Math.round(it.tam/1024))+' KB':(it.tam/1048576).toFixed(1)+' MB'}</small></span></button>
+    <button class="rx" data-k="${k}" aria-label="Tirar dos recentes" title="Tirar dos recentes">×</button></div>`).join('');
+  $$('.rabrir',box).forEach(b=>b.onclick=()=>abrirRecente(l[+b.dataset.k]));
+  $$('.rx',box).forEach(b=>b.onclick=()=>esquecerRecente(l[+b.dataset.k].chave));
+}
+// recuperação: as edições ainda não salvas ficam guardadas; se o app fechar sem salvar, dá para continuar de onde parou
+function anotarRecuperacao(){clearTimeout(recT);recT=setTimeout(salvarRecuperacao,1500)}
+// muda a cada edição (objetos e páginas passam pelo histórico; formulário pelos valores)
+function chaveEdicao(){const h=S.hist[S.hi];return (h&&h.n||0)+'|'+JSON.stringify(S.form)+'|'+S.flatten}
+async function salvarRecuperacao(){
+  if(!S.doc||S.recuperando)return;
+  try{
+    if(!(dirty()||S.hi>0)||chaveEdicao()===S.recSalvo)return; // nada novo desde que abriu ou salvou
+    if(recBytes!==S.bytes){await BANCO.set('recuperar-bytes',new Blob([S.bytes],{type:'application/pdf'}));recBytes=S.bytes}
+    await BANCO.set('recuperar',{nome:S.name,quando:Date.now(),objs:JSON.parse(JSON.stringify(S.objs)),form:{...S.form},flatten:!!S.flatten});
+  }catch(e){console.warn('recuperação',e)}
+}
+async function esquecerRecuperacao(){clearTimeout(recT);recBytes=null;try{await BANCO.del('recuperar');await BANCO.del('recuperar-bytes')}catch(e){}$('#recuperar').hidden=true}
+async function mostrarRecuperacao(){
+  let info=null;try{info=await BANCO.get('recuperar')}catch(e){}
+  const box=$('#recuperar');if(!info||!box){if(box)box.hidden=true;return}
+  $('.rctx',box).innerHTML=`Você tem edições não salvas em <b>${esc(info.nome)}.pdf</b> (${quandoTxt(info.quando)}).`;
+  box.hidden=false;
+  $('#rcSim').onclick=async()=>{
+    const b=await BANCO.get('recuperar-bytes');if(!b){toast('Não encontrei o arquivo guardado.',true);esquecerRecuperacao();return}
+    S.recuperando=true;
+    try{
+      await openFile(new File([b],info.nome+'.pdf',{type:'application/pdf'}));
+      S.objs=info.objs||[];S.form=info.form||{};S.flatten=!!info.flatten;
+      S.pages.forEach((_,i)=>renderLayer(i));pushHist();formChanged();toast('Edições recuperadas. Lembre de salvar.');
+    }finally{S.recuperando=false}
+    box.hidden=true;anotarRecuperacao();
+  };
+  $('#rcNao').onclick=()=>{if(confirm('Descartar as edições não salvas?'))esquecerRecuperacao()};
+}
+mostrarRecentes();mostrarRecuperacao();
+
+/* ================= aviso de versão nova (app do Windows e Android) ================= */
+// o site publica versao.json; se a versão de lá for maior que a instalada, oferece atualizar
+function versaoMaior(a,b){const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0}return false}
+async function verAtualizacao(){
+  const android=!!window.AndroidApp,windows=!!(window.pywebview&&pywebview.api&&pywebview.api.atualizar);
+  const atual=android?window.APP_VERSAO:S.versaoApp;if(!atual||!(android||windows))return;
+  let j;try{const r=await fetch('https://editorpdf.github.io/versao.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return} // sem internet: fica quieto
+  const nova=j&&j[android?'android':'windows'];if(!nova||!nova.versao||!nova.url||!versaoMaior(nova.versao,atual))return;
+  try{if(localStorage.getItem('editorpdf-pular-versao')===nova.versao)return}catch(e){}
+  const el=document.createElement('div');el.className='aviso-versao';el.setAttribute('role','status');
+  el.innerHTML=`<b>Nova versão ${esc(nova.versao)} disponível</b><span class="av-sub">Você está com a ${esc(atual)}.</span>
+    ${(nova.novidades||[]).length?`<ul>${nova.novidades.slice(0,5).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
+    <div class="av-bt"><button class="btn primary sm" data-a="sim">Atualizar agora</button><button class="btn sm" data-a="depois">Depois</button><button class="btn sm ghost" data-a="pular">Pular esta versão</button></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click',async e=>{
+    const a=e.target.closest('button')&&e.target.closest('button').dataset.a;if(!a)return;
+    if(a==='depois'){el.remove();return}
+    if(a==='pular'){try{localStorage.setItem('editorpdf-pular-versao',nova.versao)}catch(_){}el.remove();return}
+    if(android){AndroidApp.abrirLink(nova.url);el.remove();toast('Baixando no navegador. Quando terminar, abra o arquivo e toque em Atualizar.');return}
+    if(S.doc&&chaveEdicao()!==S.recSalvo&&(dirty()||S.hi>0)&&!confirm('Para atualizar, o app vai fechar. As edições não salvas ficam guardadas e você pode recuperar depois. Continuar?'))return;
+    await salvarRecuperacao();el.remove();busy(true,'Baixando a atualização…');
+    try{const r=await pywebview.api.atualizar(nova.url);if(r&&r.erro){busy(false);toast(r.erro,true)}else busy(true,'Abrindo o instalador…')}
+    catch(err){busy(false);toast('Não foi possível atualizar: '+(err&&err.message||err),true)}
+  });
+}
+setTimeout(verAtualizacao,6000);
 // aberto pelo Windows com um PDF (duplo clique no arquivo): o aplicativo passa ?abrir=<id>
 (async()=>{
   const id=new URLSearchParams(location.search).get('abrir');if(!id||!/^[0-9a-f]{32}$/.test(id))return;
   history.replaceState(null,'',location.pathname);
-  try{
-    const r=await fetch('/api/arquivo/'+id,{cache:'no-store'});if(!r.ok)throw new Error('não encontrado');
-    const nome=decodeURIComponent(r.headers.get('X-Nome')||'documento.pdf');
-    await openFile(new File([await r.arrayBuffer()],nome,{type:'application/pdf'}));
-  }catch(e){toast('Não foi possível abrir o arquivo: '+e.message,true)}
+  try{await abrirPorId(id)}catch(e){toast('Não foi possível abrir o arquivo: '+e.message,true)}
 })();
 </script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{})</script>
