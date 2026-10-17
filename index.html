@@ -825,19 +825,61 @@ async function openFile(file){
   if(!(file.type==='application/pdf'||/\.pdf$/i.test(file.name))){toast('Escolha um arquivo PDF.',true);return}
   busy(true);
   try{
-    const bytes=new Uint8Array(await file.arrayBuffer());
+    const original=new Uint8Array(await file.arrayBuffer());
+    // PDF com senha: pede a senha, abre uma cópia sem proteção e, ao salvar, protege de novo com a mesma senha
+    const {bytes,senha}=await desbloquearAoAbrir(original,file.name);
+    if(!bytes)return;
     // aberto pelo Windows: o servidor já tem este arquivo guardado, não precisa mandar de novo
-    if(file.docServidor)DOCS.set(bytes,Promise.resolve(file.docServidor));else setTimeout(()=>adiantarDoc(bytes),800); // depois que as primeiras páginas aparecem
+    if(file.docServidor&&!senha)DOCS.set(bytes,Promise.resolve(file.docServidor));else setTimeout(()=>adiantarDoc(bytes),800); // depois que as primeiras páginas aparecem
     S.name=file.name.replace(/\.pdf$/i,'');S.objs=[];S.sel=null;S.cur=0;S.pagesSel=new Set([0]);S.warned=false;S.fit=true;S.form={};S.flatten=false;S.hits=[];
+    S.senha=senha;S.ofereceuOcr=false;
     await openDoc(bytes);
     S.hist=[{bytes,objs:[]}];S.hi=0;S.recSalvo=chaveEdicao();updateChrome();
-    if(file.recente)anotarRecente(file,bytes);
+    if(senha)toast('Senha aceita. Ao salvar, o PDF continua protegido com a mesma senha.');
+    if(file.recente)anotarRecente(file,original); // nos recentes fica o arquivo original, ainda com senha
     $('#fname').textContent=file.name;$('#docChip').classList.add('on');document.title=file.name+' — Editor de PDF';
     const next=S.afterOpen;S.afterOpen=null;if(next)setTimeout(next,60);
   }catch(e){
     console.error(e);S.afterOpen=null;
-    toast(e&&e.name==='PasswordException'?'Este PDF tem senha. Remova a senha antes de abrir.':'Não foi possível abrir este arquivo. Ele pode estar corrompido.',true);
+    toast(e&&e.name==='PasswordException'?'Este PDF tem senha e precisa do modo avançado para abrir.':'Não foi possível abrir este arquivo. Ele pode estar corrompido.',true);
   }finally{busy(false)}
+}
+// precisa de senha? (o pdf.js avisa com PasswordException; PDFs só com restrições de cópia/impressão abrem direto)
+async function precisaSenha(bytes){
+  try{const d=await pdfjsLib.getDocument({data:bytes.slice()}).promise;await d.destroy();return false}
+  catch(e){if(e&&e.name==='PasswordException')return true;throw e}
+}
+function pedirSenha(nome,errou){
+  return new Promise(ok=>{
+    let feito=false;const fim=v=>{if(!feito){feito=true;ok(v)}};
+    busy(false);
+    const bg=dialog({title:'PDF protegido por senha',sub:`Digite a senha para abrir “${esc(nome)}”.`,ok:'Abrir',cancel:'Cancelar',
+      body:`<div class="frm"><input type="password" id="senhaAbrir" autocomplete="off" aria-label="Senha do PDF">${errou?'<p class="hint" style="color:var(--danger);margin:6px 0 0">Senha incorreta. Tente de novo.</p>':''}</div>`,
+      onOk:b=>{const v=$('#senhaAbrir',b).value;if(!v){$('#senhaAbrir',b).focus();return false}fim(v)}});
+    const campo=$('#senhaAbrir',bg);campo.focus();
+    campo.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('[data-ok]',bg).click()}});
+    new MutationObserver((_,obs)=>{if(!document.contains(bg)){obs.disconnect();fim(null)}}).observe(document.body,{childList:true});
+  });
+}
+async function desbloquearAoAbrir(bytes,nome){
+  if(!await precisaSenha(bytes))return {bytes,senha:null};
+  if(!S.srv){toast('Este PDF tem senha e precisa do modo avançado para abrir.',true);return {bytes:null}}
+  for(let errou=false;;errou=true){
+    const senha=await pedirSenha(nome,errou);if(senha==null)return {bytes:null};
+    busy(true,'Abrindo…');
+    try{
+      const j=await api('/api/tool',{ferramenta:'desbloquear',arquivos:[{nome,b64:bytesToB64(bytes)}],opcoes:{senha}});
+      return {bytes:b64ToBytes(j.b64),senha};
+    }catch(e){if(!/senha/i.test(e.message||''))throw e} // senha errada: pergunta de novo
+  }
+}
+// ao salvar um PDF que foi aberto com senha: protege de novo com a mesma senha
+async function protegerDeNovo(bytes){
+  if(!S.senha)return bytes;
+  try{
+    const j=await api('/api/tool',{ferramenta:'proteger',arquivos:[{nome:(S.name||'documento')+'.pdf',b64:bytesToB64(bytes)}],opcoes:{senha:S.senha,imprimir:true,copiar:true,editar:true}});
+    return b64ToBytes(j.b64);
+  }catch(e){toast('O PDF foi salvo sem senha: '+(e.message||e)+' Use “Proteger PDF” para colocar uma senha.',true);return bytes}
 }
 function busy(on,msg){let b=$('.busy');
   if(on&&!b){b=document.createElement('div');b.className='busy';b.innerHTML='<div class="spin"></div><div class="bmsg"></div>';document.body.appendChild(b)}
@@ -853,7 +895,7 @@ async function goHome(){
   mostrarRecentes();
   if(S.doc){try{await S.doc.destroy()}catch(e){}}
   saudacao();
-  S.doc=null;S.bytes=null;S.pages=[];S.objs=[];S.sel=null;S.hist=[];S.hi=-1;S.name='';S.cur=0;S.pagesSel=new Set([0]);S.form={};S.hasForm=false;S.hits=[];
+  S.doc=null;S.bytes=null;S.pages=[];S.objs=[];S.sel=null;S.hist=[];S.hi=-1;S.name='';S.cur=0;S.pagesSel=new Set([0]);S.form={};S.hasForm=false;S.hits=[];S.senha=null;
   closeOrganizer();document.title='Editor de PDF';abaLateral('pg');$('#thAbas').hidden=true;$('#thTitulo').hidden=false;$('#sumario').innerHTML='';
   $('#pages').innerHTML='';$('#tlist').innerHTML='';$('#fname').textContent='';$('#docChip').classList.remove('on');
   $('#drop').style.display='';setTool('select');updateChrome();
@@ -1305,6 +1347,7 @@ async function addTextBoxes(i){
   if(S.srv){
     const bl=await getBlocks(i);
     if(S.tool!=='edittext')return;
+    if(bl&&!bl.length)oferecerOcrParaEditar(i);
     if(bl){
       const covered=objsOf(i).filter(o=>o.type==='rep');
       $$('.tl',L).forEach(x=>x.remove());
@@ -1325,6 +1368,21 @@ async function addTextBoxes(i){
     d.style.cssText=`left:${ln.x-1}px;top:${ln.base-ln.fs*.95}px;width:${ln.w+2}px;height:${ln.fs*1.2}px`;
     d.title='Clique para editar este texto';L.appendChild(d);
   });
+}
+// "Editar texto" numa página sem texto (escaneada): oferece reconhecer o texto (OCR) e já deixa editável
+async function oferecerOcrParaEditar(i){
+  if(!S.ocr||S.ofereceuOcr||S.busy)return;
+  // só se a página tiver imagem (página em branco não precisa de OCR)
+  try{const ops=await S.pages[i].page.getOperatorList();const O=pdfjsLib.OPS;
+    if(!ops.fnArray.some(f=>f===O.paintImageXObject||f===O.paintInlineImageXObject||f===O.paintImageXObjectRepeat))return}catch(e){return}
+  if(S.ofereceuOcr||S.tool!=='edittext')return;S.ofereceuOcr=true;
+  const idi=S.idiomas||[],idioma=idi.includes('por')&&idi.includes('eng')?'por+eng':(idi.includes('por')?'por':idi[0]||'por');
+  dialog({title:'Página escaneada',sub:'Esta página é uma imagem: ainda não tem texto para editar.',
+    body:`<p style="margin:0 0 8px">Posso reconhecer o texto (OCR) e deixá-lo editável. Depois é só clicar no texto, como num PDF comum.</p>
+      <p class="hint muted" style="font-size:12.5px;margin:0">Confira o resultado: o reconhecimento pode errar letras em escaneamentos tortos ou borrados. Você pode desfazer com Ctrl+Z.</p>`,
+    ok:'Reconhecer e editar',cancel:'Agora não',onOk:()=>{
+      runOcr(null,idioma,true).then(()=>{setTool('edittext');setTimeout(()=>toast('Pronto: clique no texto para editar.'),400)});
+    }});
 }
 function fontFromName(name){
   const n=String(name||'');
@@ -1353,8 +1411,8 @@ async function startReplaceBlock(i,k){
   const [x0,y0,x1,y1]=b.bbox,col=samplePage(i,x0,y0,x1-x0,y1-y0);
   const fam={sans:'Helvetica',serif:'Times',mono:'Courier'}[b.family]||'Helvetica';
   const o={id:uid(),page:i,type:'rep',server:true,lineKey:i+':b'+k,x:x0,y:y0,w:x1-x0,h:y1-y0,tx:b.origin[0],base:b.origin[1],
-    text:b.text,orig:b.text,fs:b.size,font:fam,bold:b.bold,italic:b.italic,color:b.color,bg:col.bg,lineh:b.lineh,align:b.align,multi:b.lines.length>1,
-    src:{bbox:b.bbox,origin:b.origin,font:b.font}};
+    text:b.text,orig:b.text,fs:b.size,font:fam,bold:b.bold,italic:b.italic,color:b.color,bg:b.bg||col.bg,lineh:b.lineh,align:b.align,multi:b.lines.length>1,
+    src:{bbox:b.bbox,origin:b.origin,font:b.font,ocr:!!b.ocr,bg:b.bg||null}};
   S.objs.push(o);S.sel=o.id;renderLayer(i);
   if(b.mixed)toast('Este trecho mistura estilos (fontes, tamanhos ou cores). O texto novo usará um estilo só.');
   editText(o.id,false);
@@ -1796,7 +1854,8 @@ async function bake(bytes,objs){
     for(const o of objs){
       if(o.type==='rep'&&o.server){
         ops.push({page:o.page,kind:'rep',bbox:o.src.bbox,origin:o.src.origin,text:o.text,size:o.fs,color:o.color,
-          font:o.fontChanged?null:o.src.font,family:FAMILY[o.font]||'sans',bold:!!o.bold,italic:!!o.italic,align:o.align,lineh:o.lineh,multi:!!o.multi});
+          font:o.fontChanged?null:o.src.font,family:FAMILY[o.font]||'sans',bold:!!o.bold,italic:!!o.italic,align:o.align,lineh:o.lineh,multi:!!o.multi,
+          ocr:!!o.src.ocr,bg:o.src.bg||null});
         handled.add(o);
       }else if(o.type==='redact'){
         ops.push({page:o.page,kind:'redact',bbox:[o.x,o.y,o.x+o.w,o.y+o.h],fill:o.fill||'#000000'});handled.add(o);
@@ -1876,7 +1935,7 @@ function download(bytes,name,mime){
   const u=URL.createObjectURL(new Blob([bytes],{type:mime||'application/pdf'}));const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return 'baixado'}
 async function save(){
   if(!S.doc||S.busy)return;busy(true);
-  try{const out=dirty()?await bake(S.bytes,S.objs):S.bytes;const chave=chaveEdicao();
+  try{const out=await protegerDeNovo(dirty()?await bake(S.bytes,S.objs):S.bytes);const chave=chaveEdicao();
     const salvo=()=>{S.recSalvo=chave;esquecerRecuperacao()}; // salvo: a recuperação não é mais necessária
     S.aposSalvar=salvo;const r=download(out,(S.name||'documento')+'-editado.pdf');
     if(r!=='janela'){S.aposSalvar=null;salvo()}
@@ -2087,7 +2146,7 @@ async function runOcr(paginas,idioma,pular){
   const alvo=paginas?paginas.length:S.pages.length;
   await pageOp(async bytes=>{
     const j=await api('/api/ocr',{pdf:bytes,paginas,idioma,pular_com_texto:pular});
-    setTimeout(()=>{toast(j.reconhecidas?`Texto reconhecido em ${j.reconhecidas} página${j.reconhecidas>1?'s':''}. Agora dá para pesquisar e copiar.`:'Nenhuma página precisou de OCR.');(j.avisos||[]).forEach(w=>toast(w))},300);
+    setTimeout(()=>{toast(j.reconhecidas?`Texto reconhecido em ${j.reconhecidas} página${j.reconhecidas>1?'s':''}. Agora dá para pesquisar, copiar e editar.`:'Nenhuma página precisou de OCR.');(j.avisos||[]).forEach(w=>toast(w))},300);
     return j.pdfBytes;
   },{sel:[...S.pagesSel],msg:`Reconhecendo texto em ${alvo} página${alvo>1?'s':''}…`});
 }

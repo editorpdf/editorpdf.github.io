@@ -128,7 +128,7 @@ function analisar(dados, pno) {
     const page = doc.loadPage(pno);
     const [x0p, y0p, x1p, y1p] = page.getBounds();
     if (rotacao(page)) return { rotated: true, blocks: [] };
-    const out = [];
+    const out = []; var pix = null;
     for (const b of blocosDaPagina(page)) {
       const todas = []; let horizontal = true;
       for (const l of b.lines) {
@@ -142,7 +142,9 @@ function analisar(dados, pno) {
         const main = l.chars.find(c => c.c.trim() && semSubset(c.f.name) + '|' + Math.round(c.size * 10) / 10 + '|' + c.color === mainK) || l.chars[0];
         const first = l.chars.find(c => c.c.trim()) || l.chars[0];
         todas.push({ bbox: l.bbox.map(v => Math.round(v * 100) / 100), origin: [Math.round(l.chars[0].origin[0] * 100) / 100, Math.round(first.origin[1] * 100) / 100],
-          text, size: Math.round(main.size * 100) / 100, font: main.f.name, color: main.color, f: main.f, styles: [...cont.keys()] });
+          text, size: Math.round(main.size * 100) / 100, font: main.f.name, color: main.color, f: main.f, styles: [...cont.keys()],
+          // camada invisível do OCR (fonte GlyphLessFont do Tesseract): o que se vê são os pixels da imagem escaneada
+          ocr: l.chars.every(c => !c.c.trim() || /glyphless/i.test(c.f.name || '')) });
       }
       if (!horizontal || !todas.length) continue;
       for (const lines of separarColunas(todas)) {   // células de tabela lado a lado viram blocos separados
@@ -161,12 +163,30 @@ function analisar(dados, pno) {
         align = sp(L) < 2 ? 'left' : sp(C) < 2 ? 'center' : sp(R) < 2 ? 'right' : 'left';
       }
       const f0 = lines[0].f, estilos = new Set(lines.flatMap(l => l.styles));
-      out.push({ bbox: [x0, y0, x1, y1].map(v => Math.round(v * 100) / 100), lines: lines.map(({ f, styles, ...r }) => r), text, wrapped, size, font: f0.name,
-        color: lines[0].color, family: familia(f0), bold: ehNegrito(f0), italic: ehItalico(f0), lineh: Math.round(lineh * 1000) / 1000, align, origin: lines[0].origin, mixed: estilos.size > 1 });
+      const bloco = { bbox: [x0, y0, x1, y1].map(v => Math.round(v * 100) / 100), lines: lines.map(({ f, styles, ...r }) => r), text, wrapped, size, font: f0.name,
+        color: lines[0].color, family: familia(f0), bold: ehNegrito(f0), italic: ehItalico(f0), lineh: Math.round(lineh * 1000) / 1000, align, origin: lines[0].origin, mixed: estilos.size > 1 };
+      if (lines.every(l => l.ocr)) {   // página escaneada: cor da letra e do papel vêm dos pixels
+        if (!pix) pix = page.toPixmap(M.Matrix.identity, M.ColorSpace.DeviceRGB, false);
+        const [tinta, papel] = coresDaArea(pix, x0 - x0p, y0 - y0p, x1 - x0p, y1 - y0p);
+        Object.assign(bloco, { ocr: true, color: tinta, bg: papel, font: '', family: 'sans', bold: false, italic: false, mixed: false });
+      }
+      out.push(bloco);
       }
     }
     return { rotated: false, blocks: out, width: x1p - x0p, height: y1p - y0p };
-  } finally { doc.destroy(); }
+  } finally { if (pix) pix.destroy(); doc.destroy(); }
+}
+// tinta = os 10% de pixels mais escuros da área; papel = o terço mais claro
+function coresDaArea(pix, x0, y0, x1, y1) {
+  try {
+    const w = pix.getWidth(), h = pix.getHeight(), n = pix.getNumberOfComponents(), st = pix.getStride(), px = pix.getPixels(), cores = [];
+    for (let y = Math.max(0, Math.floor(y0 - 2)); y < Math.min(h, Math.ceil(y1 + 2)); y++)
+      for (let x = Math.max(0, Math.floor(x0 - 2)); x < Math.min(w, Math.ceil(x1 + 2)); x++) { const i = y * st + x * n; cores.push([px[i], px[i + 1], px[i + 2]]); }
+    if (cores.length < 10) throw 0;
+    cores.sort((a, b) => a[0] + a[1] + a[2] - b[0] - b[1] - b[2]);
+    const media = g => '#' + [0, 1, 2].map(j => Math.round(g.reduce((s, c) => s + c[j], 0) / g.length).toString(16).padStart(2, '0')).join('');
+    return [media(cores.slice(0, Math.max(1, cores.length / 10 | 0))), media(cores.slice(-Math.max(1, cores.length / 3 | 0)))];
+  } catch (e) { return ['#000000', '#ffffff']; }
 }
 
 /* ------------------------------------------------------------ aplicar trocas de texto e tarjas */
@@ -194,6 +214,8 @@ function quebrar(fonte, texto, tam, larg) {
   }
   return linhas;
 }
+// caixa do OCR aumentada (mais embaixo, por causa das pernas de g, p, q, j); m = margem extra da pintura da cor do papel
+const areaOcr = (o, m = 0) => { const [x0, y0, x1, y1] = o.bbox; return [x0 - 1.5 - m, y0 - 1.5 - m, x1 + 1.5 + m, y1 + 1.5 + 0.22 * o.size + m]; };
 async function aplicar(dados, ops) {
   const doc = abrir(dados);
   validar(ops, doc.countPages());
@@ -203,9 +225,14 @@ async function aplicar(dados, ops) {
       const page = doc.loadPage(pno);
       invs[pno] = M.Matrix.invert(page.getTransform());
       const reps = ops.filter(o => o.page === pno && o.kind === 'rep'), reds = ops.filter(o => o.page === pno && o.kind === 'redact');
-      if (reps.length) {   // 1) apaga o texto antigo, sem pintar nada nem mexer em imagens e desenhos
-        for (const o of reps) { const a = page.createAnnotation('Redact'); const [x0, y0, x1, y1] = o.bbox; a.setRect([x0 + 0.4, y0 + 0.4, x1 - 0.4, y1 - 0.4]); }
+      const normais = reps.filter(o => !o.ocr), escaneados = reps.filter(o => o.ocr);
+      if (normais.length) {   // 1) apaga o texto antigo, sem pintar nada nem mexer em imagens e desenhos
+        for (const o of normais) { const a = page.createAnnotation('Redact'); const [x0, y0, x1, y1] = o.bbox; a.setRect([x0 + 0.4, y0 + 0.4, x1 - 0.4, y1 - 0.4]); }
         page.applyRedactions(false, M.PDFPage.REDACT_IMAGE_NONE, M.PDFPage.REDACT_LINE_ART_NONE, M.PDFPage.REDACT_TEXT_REMOVE);
+      }
+      if (escaneados.length) {   // 1b) página escaneada: as letras são pixels, então apaga os pixels (a cor do papel é pintada depois)
+        for (const o of escaneados) { const a = page.createAnnotation('Redact'); a.setRect(areaOcr(o)); }
+        page.applyRedactions(false, M.PDFPage.REDACT_IMAGE_PIXELS, M.PDFPage.REDACT_LINE_ART_NONE, M.PDFPage.REDACT_TEXT_REMOVE);
       }
       if (reds.length) {   // 2) tarjas: apagam texto, pixels de imagem e desenhos cobertos
         for (const o of reds) { const a = page.createAnnotation('Redact'); a.setRect(o.bbox); }
@@ -219,6 +246,7 @@ async function aplicar(dados, ops) {
   for (const o of ops) {
     const pg = pages[o.page], inv = invs[o.page];
     if (o.kind === 'redact') { const r = rectPdf(inv, o.bbox); pg.drawRectangle({ x: r.x, y: r.y, width: r.w, height: r.h, color: corPdf(o.fill || '#000000') }); continue; }
+    if (o.ocr) { const r = rectPdf(inv, areaOcr(o, 1)); pg.drawRectangle({ x: r.x, y: r.y, width: r.w, height: r.h, color: corPdf(o.bg || '#ffffff') }); }
     const texto = String(o.text || '');
     if (!texto.trim()) { report.push({ page: o.page, fonte: null, apagado: true }); continue; }
     const fonte = await fontePdf(pd, fontes, o.family || 'sans', !!o.bold, !!o.italic);

@@ -1,19 +1,18 @@
 {
     "windows":  {
-                    "versao":  "2.0",
+                    "versao":  "2.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Novo: \"Sobre e licenças\" no rodapé da tela inicial, com a versão, a licença e os componentes usados",
-                                      "O Editor de PDF agora é código aberto: github.com/editorpdf/editor-pdf"
+                                      "Abre PDF com senha: o app pede a senha e, ao salvar, mantém o arquivo protegido",
+                                      "PDF escaneado: em \"Editar texto\", o app reconhece o texto (OCR) e deixa editar direto na página"
                                   ]
                 },
     "android":  {
-                    "versao":  "2.0",
+                    "versao":  "2.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Novo: \"Sobre e licenças\" no rodapé da tela inicial, com a versão, a licença e os componentes usados",
-                                      "O Editor de PDF agora é código aberto: github.com/editorpdf/editor-pdf",
-                                      "Mesma versão do Windows: agora os dois são 2.0"
+                                      "Abre PDF com senha: o app pede a senha e, ao salvar, mantém o arquivo protegido",
+                                      "PDF escaneado: em \"Editar texto\", o app reconhece o texto (OCR) e deixa editar direto na página"
                                   ]
                 }
 }
