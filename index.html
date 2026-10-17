@@ -215,6 +215,8 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .dropbox.over{border-color:var(--accent);background:var(--accent-soft);color:var(--text)}
 .dropbox b{color:var(--text)}
 .home-foot{margin-top:18px;text-align:center;font-size:12.5px;color:var(--muted)}
+.lnk-btn{border:0;background:none;padding:2px 4px;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
+.lnk-btn:hover{color:var(--text)}
 
 /* ---- objetos sobre a página ---- */
 .o{position:absolute;touch-action:none}
@@ -627,6 +629,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
         <div class="dropbox" id="dropbox"><b>Ou arraste um PDF para cá</b><br>Para abrir e editar.</div>
         <section class="tools-sec" aria-labelledby="tsT"><h2 id="tsT">Todas as ferramentas</h2><p class="sub">Funcionam com um ou vários arquivos de uma vez.</p><div id="toolsHome"></div></section>
         <p class="home-foot" id="homeFoot"></p>
+        <p class="home-foot"><button class="lnk-btn" id="bRestaurar" title="Apaga recentes, edições guardadas, assinaturas e preferências deste aparelho">Restaurar o app (apagar dados guardados)</button></p>
       </div></div>
     </main>
     <aside class="right" id="right" aria-label="Propriedades"></aside>
@@ -2445,7 +2448,8 @@ const BANCO=(()=>{
   let p=null;
   const abrir=()=>p||(p=new Promise((ok,er)=>{const r=indexedDB.open('editorpdf',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>{p=null;er(r.error)}}));
   const op=(modo,f)=>abrir().then(db=>new Promise((ok,er)=>{const t=db.transaction('kv',modo),r=f(t.objectStore('kv'));t.oncomplete=()=>ok(r.result);t.onerror=t.onabort=()=>er(t.error)}));
-  return{get:k=>op('readonly',s=>s.get(k)),set:(k,v)=>op('readwrite',s=>s.put(v,k)),del:k=>op('readwrite',s=>s.delete(k))};
+  return{get:k=>op('readonly',s=>s.get(k)),set:(k,v)=>op('readwrite',s=>s.put(v,k)),del:k=>op('readwrite',s=>s.delete(k)),
+    fechar:async()=>{if(p){try{(await p).close()}catch(e){}p=null}}};
 })();
 // PDF registrado pelo aplicativo do Windows (duplo clique, janela Abrir ou recentes): o servidor entrega o arquivo
 async function abrirPorId(id){
@@ -2536,6 +2540,24 @@ async function mostrarRecuperacao(){
   $('#rcNao').onclick=()=>{if(confirm('Descartar as edições não salvas?'))esquecerRecuperacao()};
 }
 mostrarRecentes();mostrarRecuperacao();
+
+/* ================= restaurar o app (começar do zero) ================= */
+// apaga tudo o que o app guardou neste aparelho; os PDFs do usuário não são tocados
+async function restaurarApp(){
+  await BANCO.fechar(); // a conexão aberta impediria apagar o banco
+  await new Promise(ok=>{try{const r=indexedDB.deleteDatabase('editorpdf');r.onsuccess=r.onerror=r.onblocked=()=>ok()}catch(e){ok()}});
+  try{localStorage.clear()}catch(e){}try{sessionStorage.clear()}catch(e){}
+  try{if(window.caches)for(const k of await caches.keys())await caches.delete(k)}catch(e){}            // site: arquivos guardados para funcionar sem internet
+  try{if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister()}catch(e){}
+  try{if(window.pywebview&&pywebview.api&&pywebview.api.restaurar)await pywebview.api.restaurar()}catch(e){} // Windows: arquivos do app
+}
+$('#bRestaurar').onclick=()=>{
+  dialog({title:'Restaurar o app?',sub:'O app volta como recém-instalado neste aparelho. Isto apaga:',
+    body:`<ul style="margin:0 0 8px;padding-left:20px;line-height:1.6"><li>a lista de arquivos recentes</li><li>edições não salvas guardadas para recuperar</li><li>assinaturas salvas</li><li>tema e preferências</li></ul><p class="hint">Seus PDFs não são apagados. Use se o app estiver com algum comportamento estranho.</p>`,
+    ok:'Restaurar',cancel:'Cancelar',onOk:()=>{
+      if(S.doc&&(dirty()||S.hi>0)&&chaveEdicao()!==S.recSalvo&&!confirm('Há edições não salvas no PDF aberto. Elas serão perdidas. Continuar?'))return false;
+      busy(true,'Restaurando…');restaurarApp().then(()=>{location.href=location.pathname})}});
+};
 
 /* ================= aviso de versão nova (app do Windows e Android) ================= */
 // o site publica versao.json; se a versão de lá for maior que a instalada, oferece atualizar
