@@ -1,17 +1,19 @@
 {
     "windows":  {
-                    "versao":  "1.9",
+                    "versao":  "2.0",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Novo: botão \"Restaurar o app\" na tela inicial, para começar do zero se algo der errado",
-                                      "A atualização limpa arquivos antigos que não são mais usados"
+                                      "Novo: \"Sobre e licenças\" no rodapé da tela inicial, com a versão, a licença e os componentes usados",
+                                      "O Editor de PDF agora é código aberto: github.com/editorpdf/editor-pdf"
                                   ]
                 },
     "android":  {
-                    "versao":  "1.5",
+                    "versao":  "2.0",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Novo: botão \"Restaurar o app\" na tela inicial, para começar do zero se algo der errado"
+                                      "Novo: \"Sobre e licenças\" no rodapé da tela inicial, com a versão, a licença e os componentes usados",
+                                      "O Editor de PDF agora é código aberto: github.com/editorpdf/editor-pdf",
+                                      "Mesma versão do Windows: agora os dois são 2.0"
                                   ]
                 }
 }

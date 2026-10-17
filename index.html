@@ -217,6 +217,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .home-foot{margin-top:18px;text-align:center;font-size:12.5px;color:var(--muted)}
 .lnk-btn{border:0;background:none;padding:2px 4px;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
 .lnk-btn:hover{color:var(--text)}
+.modal a[data-url]{color:var(--accent)}
 
 /* ---- objetos sobre a página ---- */
 .o{position:absolute;touch-action:none}
@@ -629,7 +630,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
         <div class="dropbox" id="dropbox"><b>Ou arraste um PDF para cá</b><br>Para abrir e editar.</div>
         <section class="tools-sec" aria-labelledby="tsT"><h2 id="tsT">Todas as ferramentas</h2><p class="sub">Funcionam com um ou vários arquivos de uma vez.</p><div id="toolsHome"></div></section>
         <p class="home-foot" id="homeFoot"></p>
-        <p class="home-foot"><button class="lnk-btn" id="bRestaurar" title="Apaga recentes, edições guardadas, assinaturas e preferências deste aparelho">Restaurar o app (apagar dados guardados)</button></p>
+        <p class="home-foot"><button class="lnk-btn" id="bSobre">Sobre e licenças</button> · <button class="lnk-btn" id="bRestaurar" title="Apaga recentes, edições guardadas, assinaturas e preferências deste aparelho">Restaurar o app (apagar dados guardados)</button></p>
       </div></div>
     </main>
     <aside class="right" id="right" aria-label="Propriedades"></aside>
@@ -2227,7 +2228,7 @@ const TOOLS2=[
    {id:'modo',t:'select',l:'Como converter',def:'imagem',o:[['imagem','Slides idênticos ao PDF (imagem, não editável)'],['texto','Caixas de texto editáveis (sem imagens)']]},{...PGS,id:'paginas'}]},
  {id:'pdf2txt',cat:'dePdf',nome:'PDF para texto',desc:'Extraia o texto do PDF para um arquivo .txt.',icone:'txt',cor:'c8',acc:'.pdf',multi:true,min:1,run:'Extrair',usaAberto:true,opts:[{...PGS,id:'paginas'}]},
  {id:'cabecalho',cat:'edseg',nome:'Cabeçalho e rodapé',desc:'Coloque texto, data, número da página e logotipo em todas as páginas.',icone:'header',cor:'c1',acc:'.pdf',multi:true,min:1,run:'Aplicar',usaAberto:true,opts:[
-   {id:'cab_esq',t:'text',l:'Cabeçalho à esquerda',ph:'ex.: Transportes Sarzedo',par:1},{id:'cab_dir',t:'text',l:'Cabeçalho à direita',ph:'ex.: {data}',par:1},
+   {id:'cab_esq',t:'text',l:'Cabeçalho à esquerda',ph:'ex.: Nome da empresa',par:1},{id:'cab_dir',t:'text',l:'Cabeçalho à direita',ph:'ex.: {data}',par:1},
    {id:'cab_centro',t:'text',l:'Cabeçalho no centro'},
    {id:'rod_esq',t:'text',l:'Rodapé à esquerda',ph:'ex.: {arquivo}',par:2},{id:'rod_dir',t:'text',l:'Rodapé à direita',def:'Página {n} de {total}',par:2},
    {id:'rod_centro',t:'text',l:'Rodapé no centro',hint:'Use {n} (página), {total} (total de páginas), {data} (hoje) e {arquivo} (nome do arquivo).'},
@@ -2247,7 +2248,7 @@ const TOOLS2=[
    {id:'maiusculas',t:'check',l:'Diferenciar maiúsculas',def:false},{id:'inteira',t:'check',l:'Só palavra inteira',def:false},{...PGS,id:'paginas'}]},
  {id:'assinar',cat:'edseg',nome:'Assinatura digital (certificado)',desc:'Assine com certificado digital A1 (.pfx), com validade jurídica.',icone:'cert',cor:'c1',acc:'.pdf',multi:true,min:1,run:'Assinar',usaAberto:true,opts:[
    {id:'certificado',t:'file',l:'Certificado digital A1 (.pfx ou .p12)',acc:'.pfx,.p12'},{id:'senha',t:'password',l:'Senha do certificado'},
-   {id:'motivo',t:'text',l:'Motivo (opcional)',ph:'ex.: Aprovação do relatório',par:1},{id:'local',t:'text',l:'Local (opcional)',ph:'ex.: Sarzedo - MG',par:1},
+   {id:'motivo',t:'text',l:'Motivo (opcional)',ph:'ex.: Aprovação do relatório',par:1},{id:'local',t:'text',l:'Local (opcional)',ph:'ex.: São Paulo - SP',par:1},
    {id:'visivel',t:'check',l:'Mostrar um carimbo da assinatura na página',def:true},
    {id:'pagina',t:'select',l:'Página do carimbo',def:'ultima',o:[['ultima','Última página'],['primeira','Primeira página']],show:v=>v.visivel,par:2},
    {id:'posicao',t:'select',l:'Posição',def:'baixo-direita',o:[['baixo-direita','Embaixo, à direita'],['baixo-esquerda','Embaixo, à esquerda'],['cima-direita','Em cima, à direita'],['cima-esquerda','Em cima, à esquerda']],show:v=>v.visivel,par:2}],
@@ -2557,6 +2558,41 @@ $('#bRestaurar').onclick=()=>{
     ok:'Restaurar',cancel:'Cancelar',onOk:()=>{
       if(S.doc&&(dirty()||S.hi>0)&&chaveEdicao()!==S.recSalvo&&!confirm('Há edições não salvas no PDF aberto. Elas serão perdidas. Continuar?'))return false;
       busy(true,'Restaurando…');restaurarApp().then(()=>{location.href=location.pathname})}});
+};
+
+/* ================= Sobre e licenças ================= */
+// o app usa MuPDF e Ghostscript (licença AGPL): o código-fonte completo fica público no repositório abaixo
+const CODIGO_FONTE='https://github.com/editorpdf/editor-pdf';
+const TERCEIROS=[
+  ['MuPDF / PyMuPDF / MuPDF.js','Artifex Software','AGPL-3.0','https://mupdf.com'],
+  ['Ghostscript (PDF/A, Windows)','Artifex Software','AGPL-3.0','https://www.ghostscript.com'],
+  ['PDF.js','Mozilla','Apache-2.0','https://mozilla.github.io/pdf.js/'],
+  ['pdf-lib','Andrew Dillon','MIT','https://pdf-lib.js.org'],
+  ['Tesseract e Tesseract.js (OCR)','Google e colaboradores','Apache-2.0','https://github.com/naptha/tesseract.js'],
+  ['pywebview','Roman Sirokov','BSD-3-Clause','https://pywebview.flowrl.com'],
+  ['pdf2docx','Artifex Software e colaboradores','MIT','https://github.com/ArtifexSoftware/pdf2docx'],
+  ['python-docx, python-pptx','Steve Canny','MIT','https://github.com/python-openxml'],
+  ['openpyxl','Eric Gazoni, Charlie Clark','MIT','https://openpyxl.readthedocs.io'],
+  ['pyHanko (assinatura digital)','Matthias Valvekens','MIT','https://github.com/MatthiasValvekens/pyHanko'],
+  ['Pillow','Jeffrey A. Clark e colaboradores','MIT-CMU','https://python-pillow.org'],
+  ['OpenCV, NumPy','OpenCV / NumPy','Apache-2.0, BSD-3-Clause','https://opencv.org'],
+  ['Python, pythonnet, PyInstaller','PSF e colaboradores','PSF, MIT, GPL-2.0 com exceção','https://www.python.org'],
+  ['AndroidX (app Android)','Google','Apache-2.0','https://developer.android.com/jetpack/androidx'],
+];
+function abrirFora(url){
+  if(window.AndroidApp&&AndroidApp.abrirLink){AndroidApp.abrirLink(url);return}
+  if(window.pywebview&&pywebview.api&&pywebview.api.link){pywebview.api.link(url);return}
+  window.open(url,'_blank','noopener');
+}
+$('#bSobre').onclick=()=>{
+  const v=window.APP_VERSAO||S.versaoApp;
+  const bg=dialog({title:'Editor de PDF Fácil',sub:(v?`Versão ${esc(v)}. `:'')+'Software livre, gratuito e sem anúncios.',ok:'Fechar',cancel:'',
+    body:`<p style="margin:0 0 8px">Este programa é software livre: você pode redistribuí-lo e modificá-lo nos termos da <b>Licença Pública Geral Affero GNU (AGPL), versão 3</b> ou posterior.</p>
+    <p style="margin:0 0 8px">Ele é distribuído <b>sem nenhuma garantia</b>, nem mesmo a de que serve para um fim específico. Confira o PDF salvo antes de usar, principalmente tarjas e assinaturas.</p>
+    <p style="margin:0 0 12px"><a href="#" data-url="${CODIGO_FONTE}">Código-fonte completo</a> · <a href="#" data-url="${CODIGO_FONTE}/blob/main/LICENSE">Texto da licença</a> · <a href="#" data-url="https://editorpdf.github.io/privacidade.html">Privacidade</a></p>
+    <details><summary style="cursor:pointer;font-weight:600">Componentes de terceiros</summary>
+    <ul style="margin:8px 0 0;padding-left:18px;line-height:1.5;font-size:13px;max-height:220px;overflow:auto">${TERCEIROS.map(([n,a,l,u])=>`<li><a href="#" data-url="${u}">${esc(n)}</a> — ${esc(a)} (${esc(l)})</li>`).join('')}</ul></details>`});
+  bg.addEventListener('click',e=>{const a=e.target.closest('a[data-url]');if(!a)return;e.preventDefault();abrirFora(a.dataset.url)});
 };
 
 /* ================= aviso de versão nova (app do Windows e Android) ================= */
