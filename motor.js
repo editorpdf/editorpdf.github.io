@@ -633,6 +633,53 @@ function diferencas(a, b) {   // diff de linhas (maior subsequência comum)
   while (i < n) out.push(['-', a[i++]]); while (j < m) out.push(['+', b[j++]]);
   return out;
 }
+// palavras da página (texto e retângulo), na ordem de leitura
+function palavras(doc, i) {
+  if (i >= doc.countPages()) return [];
+  const out = [];
+  for (const b of blocosDaPagina(doc.loadPage(i))) for (const l of b.lines) {
+    let w = null;
+    for (const c of l.chars) {
+      if (!c.c.trim()) { if (w) out.push(w); w = null; continue; }
+      if (!w) w = { t: '', r: [...c.rect] };
+      w.t += c.c; w.r = [Math.min(w.r[0], c.rect[0]), Math.min(w.r[1], c.rect[1]), Math.max(w.r[2], c.rect[2]), Math.max(w.r[3], c.rect[3])];
+    }
+    if (w) out.push(w);
+  }
+  return out;
+}
+// quais palavras saíram de A e quais entraram em B (maior subsequência comum)
+function difPalavras(a, b) {
+  const n = a.length, m = b.length;
+  if (n * m > 6e6) return null;   // página enorme: mostra lado a lado sem marcar
+  const L = Array.from({ length: n + 1 }, () => new Uint32Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) L[i][j] = a[i].t === b[j].t ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const saiu = [], entrou = []; let i = 0, j = 0;
+  while (i < n && j < m) { if (a[i].t === b[j].t) { i++; j++; } else if (L[i + 1][j] >= L[i][j + 1]) saiu.push(a[i++]); else entrou.push(b[j++]); }
+  while (i < n) saiu.push(a[i++]); while (j < m) entrou.push(b[j++]);
+  return [saiu, entrou];
+}
+// página deitada: A à esquerda e B à direita; palavras que saíram em vermelho, que entraram em verde
+async function ladoALado(pd, f, fb, A, B, da, db, na, nb, i) {
+  const wa = palavras(A, i), wb = palavras(B, i), dif = difPalavras(wa, wb) || [[], []];
+  const pg = pd.addPage([842, 595]), marg = 18, W = (842 - 3 * marg) / 2, topo = 46;
+  pg.drawText(`Página ${i + 1}`, { x: marg, y: 595 - 24, size: 12, font: fb });
+  const lados = [[A, da, na, dif[0], [.9, .15, .15], 'A (antigo): '], [B, db, nb, dif[1], [.1, .7, .3], 'B (novo): ']];
+  for (let k = 0; k < 2; k++) {
+    const [doc, dados, nome, marcas, cor, rot] = lados[k], x0 = marg + k * (W + marg), H = 595 - marg - topo;
+    pg.drawText(cabe(f, (rot + nome).slice(0, 70)), { x: x0, y: 595 - topo + 6, size: 8.5, font: f, color: rgb(.3, .3, .3) });
+    pg.drawRectangle({ x: x0, y: marg, width: W, height: H, borderColor: rgb(.8, .8, .8), borderWidth: 0.6 });
+    if (i >= doc.countPages()) { pg.drawText('(esta página não existe aqui)', { x: x0 + 12, y: 595 - topo - 24, size: 10, font: f, color: rgb(.5, .5, .5) }); continue; }
+    const [bx0, by0, bx1, by1] = doc.loadPage(i).getBounds(), pw = bx1 - bx0, ph = by1 - by0;
+    const esc = Math.min(W / pw, H / ph), ox = x0 + (W - pw * esc) / 2, oyTopo = topo + (H - ph * esc) / 2;
+    const [emb] = await pd.embedPdf(dados, [i]);
+    pg.drawPage(emb, { x: ox, y: 595 - oyTopo - ph * esc, width: pw * esc, height: ph * esc });
+    for (const w of marcas) {
+      const [r0, r1, r2, r3] = w.r, x = ox + (r0 - bx0) * esc - 1, yTopo = oyTopo + (r1 - by0) * esc - 1;
+      pg.drawRectangle({ x, y: 595 - yTopo - ((r3 - r1) * esc + 2), width: (r2 - r0) * esc + 2, height: (r3 - r1) * esc + 2, color: rgb(...cor), opacity: 0.35 });
+    }
+  }
+}
 F.comparar = { min: 2, max: 2, ext: PDF, async fn(arqs) {
   const [[na, da], [nb, db]] = arqs, A = abrir(da, na), B = abrir(db, nb);
   const pd = await LibDoc.create(), fontes = {}, f = await fontePdf(pd, fontes, 'sans'), fb = await fontePdf(pd, fontes, 'sans', true);
@@ -643,14 +690,16 @@ F.comparar = { min: 2, max: 2, ext: PDF, async fn(arqs) {
   };
   linha('Comparação de PDFs', undefined, 16, true); linha(`A (antigo): ${na}  [${A.countPages()} páginas]`); linha(`B (novo):   ${nb}  [${B.countPages()} páginas]`);
   linha('Em vermelho: o que só existe em A. Em verde: o que só existe em B.', [.35, .35, .35]); y -= 8;
-  let com = 0;
+  linha('As páginas com diferença aparecem lado a lado no fim do relatório, com as palavras marcadas.', [.35, .35, .35]); y -= 8;
+  let com = 0; const comDif = [];
   for (let i = 0; i < Math.max(A.countPages(), B.countPages()); i++) {
-    const d = diferencas(linhasTexto(A, i), linhasTexto(B, i)); if (!d.length) continue; com++;
+    const d = diferencas(linhasTexto(A, i), linhasTexto(B, i)); if (!d.length) continue; com++; comDif.push(i);
     linha(`Página ${i + 1}`, undefined, 11, true);
     for (const [s, t] of d) linha((s === '-' ? '- ' : '+ ') + t, s === '-' ? [.75, .1, .1] : [.05, .5, .2]);
     y -= 6;
   }
   if (!com) linha('Nenhuma diferença de texto encontrada.', [.05, .5, .2], 12, true);
+  for (const i of comDif) await ladoALado(pd, f, fb, A, B, da, db, na, nb, i);
   A.destroy(); B.destroy();
   return [[['comparacao.pdf', await pd.save()]], [com ? `Diferenças de texto em ${com} página(s).` : 'Os textos são iguais. Obs.: só o texto é comparado, não a aparência.']];
 } };

@@ -218,6 +218,9 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .lnk-btn{border:0;background:none;padding:2px 4px;font:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
 .lnk-btn:hover{color:var(--text)}
 .modal a[data-url]{color:var(--accent)}
+.marquee{position:absolute;border:1px dashed var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);pointer-events:none;z-index:5}
+.tsList{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.tsItem{display:flex;gap:4px;align-items:center}.tsItem .btn{flex:1;justify-content:flex-start;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ---- objetos sobre a página ---- */
 .o{position:absolute;touch-action:none}
@@ -463,7 +466,8 @@ select.ff{padding:0;font-size:10px}
 .checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin:2px 0 10px}
 /* carimbos */
 .stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
-.stp{cursor:pointer}
+.stp{cursor:pointer;position:relative}
+.stp .stDel{position:absolute;top:-6px;right:-4px;width:20px;height:20px;padding:0;border-radius:50%;background:var(--layer);border:1px solid var(--border);text-decoration:none;line-height:18px;font-size:14px}
 .stp input{position:absolute;opacity:0}
 .stp span{display:block;text-align:center;font-weight:800;font-size:12px;letter-spacing:.06em;padding:8px 4px;border:2px solid;border-radius:6px;opacity:.75}
 .stp input:checked+span{opacity:1;box-shadow:0 0 0 2px var(--layer),0 0 0 4px var(--accent)}
@@ -794,7 +798,7 @@ async function detectServer(){
 /* ================= estado ================= */
 const S={srv:false,doc:null,bytes:null,pages:[],scale:1,tool:'select',objs:[],sel:null,hist:[],hi:-1,name:'',fit:true,
   pagesSel:new Set([0]),cur:0,busy:false,warned:false,defaults:{fs:14,font:'Helvetica',bold:false,italic:false,color:'#000000',stroke:'#e53935',sw:2,hl:'#ffeb3b'},
-  form:{},hasForm:false,flatten:false,hits:[]};
+  form:{},hasForm:false,flatten:false,hits:[],multi:[]};
 let recT=null,recBytes=null,histN=0; // recuperação automática e contador do histórico (usados desde o início)
 // há alterações ainda não gravadas no PDF? (objetos desenhados ou campos de formulário preenchidos)
 const dirty=()=>S.objs.length>0||Object.keys(S.form).length>0||S.flatten;
@@ -1138,8 +1142,8 @@ async function gotoHist(k){
   if(k<0||k>=S.hist.length||S.busy)return;busy(true);
   try{
     const st=S.hist[k];S.hi=k;
-    if(st.bytes!==S.bytes){S.objs=clone(st.objs);S.sel=null;await openDoc(st.bytes,{keepView:true})}
-    else{S.objs=clone(st.objs);S.sel=null;S.pages.forEach((_,i)=>renderLayer(i))}
+    if(st.bytes!==S.bytes){S.objs=clone(st.objs);S.sel=null;S.multi=[];await openDoc(st.bytes,{keepView:true})}
+    else{S.objs=clone(st.objs);S.sel=null;S.multi=[];S.pages.forEach((_,i)=>renderLayer(i))}
     renderProps();updateChrome();
   }finally{busy(false)}
 }
@@ -1164,12 +1168,16 @@ function renderLayer(i){
   addFields(i);addHits(i);
   if(S.tool==='edittext')addTextBoxes(i);
 }
+// vários objetos selecionados (Shift/Ctrl+clique ou arrastar uma caixa com "Selecionar"): S.multi, sempre da mesma página
+const marcado=o=>S.sel===o.id||(S.multi||[]).includes(o.id);
+const selecionados=()=>{const ids=new Set([...(S.multi||[]),...(S.sel?[S.sel]:[])]);return S.objs.filter(o=>ids.has(o.id))};
+function moverObj(o,dx,dy){if(o.type==='draw')o.pts=o.pts.map(p=>[p[0]+dx,p[1]+dy]);else{o.x+=dx;o.y+=dy;if(o.type==='line'){o.x2+=dx;o.y2+=dy}}}
 function makeEl(o){
-  const e=document.createElement('div');e.className='o '+o.type+(S.sel===o.id?' sel':'');e.dataset.id=o.id;
+  const e=document.createElement('div');e.className='o '+o.type+(marcado(o)?' sel':'');e.dataset.id=o.id;
   const pos=`left:${o.x}px;top:${o.y}px;`;
   switch(o.type){
     case'text':e.className+=' text';e.style.cssText=pos+fontStyle(o);e.textContent=o.text;break;
-    case'rep':e.className='o rep'+(S.sel===o.id?' sel':'');
+    case'rep':e.className='o rep'+(marcado(o)?' sel':'');
       e.style.cssText=o.server
         ?`left:${o.x}px;top:${o.y}px;width:${o.w}px;min-height:${o.h}px;white-space:pre-wrap;line-height:${(o.lineh||1.2)*o.fs}px;text-align:${o.align||'left'};background:${o.bg};${fontStyle(o)}`
         :`left:${o.x}px;top:${o.y}px;min-width:${o.w}px;height:${o.h}px;background:${o.bg};${fontStyle(o)};padding-left:${o.padL||0}px;line-height:${o.h}px`;
@@ -1192,9 +1200,13 @@ function makeEl(o){
 }
 function addObj(o){o.id=uid();S.objs.push(o);S.sel=o.id;renderLayer(o.page);pushHist();renderProps();return o}
 function removeSel(){
-  const o=objById(S.sel);if(!o)return;S.objs=S.objs.filter(x=>x.id!==o.id);S.sel=null;renderLayer(o.page);pushHist();renderProps();
+  const tudo=selecionados();if(!tudo.length)return;const ids=new Set(tudo.map(o=>o.id)),pgs=new Set(tudo.map(o=>o.page));
+  S.objs=S.objs.filter(x=>!ids.has(x.id));S.sel=null;S.multi=[];pgs.forEach(renderLayer);pushHist();renderProps();
 }
-function select(id){const prev=S.sel;S.sel=id;if(prev){const p=objById(prev);if(p)renderLayer(p.page)}const o=objById(id);if(o)renderLayer(o.page);renderProps()}
+function select(id){
+  const antes=new Set(selecionados().map(o=>o.page));S.sel=id;S.multi=[];
+  const o=objById(id);if(o)antes.add(o.page);antes.forEach(renderLayer);renderProps();
+}
 
 /* ================= ferramentas ================= */
 function setTool(t){
@@ -1219,11 +1231,19 @@ function bindLayer(i){
     if(e.target.closest('[contenteditable=true]'))return;
     if(targetEl&&!['highlight','underline','strike','draw','rect','ellipse','line','note','text','redact'].includes(t)||targetEl&&t==='select'){
       const o=objById(targetEl.dataset.id);if(!o)return;
-      if(S.sel!==o.id)select(o.id);
+      if(t==='select'&&(e.shiftKey||e.ctrlKey||e.metaKey)){ // Shift/Ctrl+clique: junta ou tira da seleção
+        const atual=selecionados().filter(x=>x.page===o.page).map(x=>x.id);
+        const novo=atual.includes(o.id)?atual.filter(x=>x!==o.id):[...atual,o.id];
+        const fora=new Set(selecionados().filter(x=>x.page!==o.page).map(x=>x.page));
+        S.multi=novo;S.sel=novo[novo.length-1]||null;fora.forEach(renderLayer);renderLayer(o.page);renderProps();e.preventDefault();return;
+      }
+      const noGrupo=(S.multi||[]).length>1&&marcado(o);
+      if(!noGrupo&&S.sel!==o.id)select(o.id);
       const el=$(`.o[data-id="${o.id}"]`,L);
       const handle=e.target.classList.contains('h');
       const [px,py]=pt(e,L);
-      drag={mode:handle?'resize':'move',o,el,px,py,ox:o.x,oy:o.y,ow:o.w,oh:o.h,pts:o.pts&&o.pts.map(p=>[...p]),x2:o.x2,y2:o.y2,moved:false};
+      drag={mode:handle&&!noGrupo?'resize':'move',o,el,px,py,ox:o.x,oy:o.y,ow:o.w,oh:o.h,pts:o.pts&&o.pts.map(p=>[...p]),x2:o.x2,y2:o.y2,moved:false,
+        grupo:noGrupo?selecionados().map(g=>({g,ox:g.x,oy:g.y,pts:g.pts&&g.pts.map(p=>[...p]),x2:g.x2,y2:g.y2})):null};
       try{L.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();return;
     }
     if(['text','highlight','underline','strike','draw','rect','ellipse','line','note','redact'].includes(t)){
@@ -1240,10 +1260,26 @@ function bindLayer(i){
       const el=makeEl(o);L.appendChild(el);
       drag={mode:'create',o,el,px:x,py:y};try{L.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();return;
     }
-    if(t==='select'||t==='edittext'){if(S.sel){const p=objById(S.sel);S.sel=null;if(p)renderLayer(p.page);renderProps()}}
+    if(t==='select'||t==='edittext'){if(S.sel||(S.multi||[]).length)select(null)}
+    // com o mouse, arrastar no vazio desenha uma caixa que seleciona tudo o que ela tocar (no toque, arrastar rola a página)
+    if(t==='select'&&e.pointerType==='mouse'){
+      const [x,y]=pt(e,L);const el=document.createElement('div');el.className='marquee';L.appendChild(el);
+      drag={mode:'marquee',el,px:x,py:y,o:null};try{L.setPointerCapture(e.pointerId)}catch(_){}
+    }
   });
   L.addEventListener('pointermove',e=>{
     if(!drag)return;const [x,y]=pt(e,L),o=drag.o,dx=x-drag.px,dy=y-drag.py;
+    if(drag.mode==='marquee'){
+      drag.r=[Math.min(drag.px,x),Math.min(drag.py,y),Math.abs(dx),Math.abs(dy)];
+      drag.el.style.cssText=`left:${drag.r[0]}px;top:${drag.r[1]}px;width:${drag.r[2]}px;height:${drag.r[3]}px`;return;
+    }
+    if(drag.mode==='move'&&drag.grupo){
+      if(Math.abs(dx)+Math.abs(dy)>1)drag.moved=true;
+      for(const s of drag.grupo){const g=s.g;
+        if(g.type==='draw')g.pts=s.pts.map(p=>[p[0]+dx,p[1]+dy]);
+        else{g.x=s.ox+dx;g.y=s.oy+dy;if(g.type==='line'){g.x2=s.x2+dx;g.y2=s.y2+dy}}}
+      renderLayer(i);return;
+    }
     if(drag.mode==='create'){
       if(o.type==='draw'){o.pts.push([x,y])}
       else if(o.type==='line'){o.x2=x;o.y2=y}
@@ -1263,6 +1299,15 @@ function bindLayer(i){
   });
   const end=e=>{
     if(!drag)return;const d=drag;drag=null;const o=d.o;
+    if(d.mode==='marquee'){
+      d.el.remove();const r=d.r;if(!r||r[2]<3||r[3]<3)return;
+      const dentro=$$('.o',L).filter(el=>{const x0=el.offsetLeft,y0=el.offsetTop,x1=x0+el.offsetWidth,y1=y0+el.offsetHeight;
+        return x1>r[0]&&x0<r[0]+r[2]&&y1>r[1]&&y0<r[1]+r[3]}).map(el=>el.dataset.id);
+      if(!dentro.length)return;
+      S.multi=dentro;S.sel=dentro[dentro.length-1];renderLayer(i);renderProps();
+      if(dentro.length>1)toast(`${dentro.length} objetos selecionados: arraste um deles para mover todos.`);
+      return;
+    }
     if(d.mode==='create'){
       const tiny=o.type==='draw'?o.pts.length<2:o.type==='line'?Math.hypot(o.x2-o.x,o.y2-o.y)<3:(o.w<3||o.h<3);
       if(tiny){renderLayer(i);return}
@@ -1598,11 +1643,14 @@ function openStamp(){
   if(!S.doc){toast('Abra um PDF primeiro.',true);setTool('select');return}
   let nome='';try{nome=localStorage.getItem('editorpdf-carimbo-nome')||''}catch(e){}
   const hoje=new Date().toLocaleDateString('pt-BR');
+  const meus=carimbosSalvos();
   const bg=dialog({title:'Carimbo',sub:'Escolha o carimbo. Ele entra no meio da página atual; depois arraste para o lugar.',
     body:`<div class="stamps">${CARIMBOS.map(([t,c],k)=>`<label class="stp"><input type="radio" name="stp" value="${k}" ${k?'':'checked'}><span style="color:${c};border-color:${c}">${t}</span></label>`).join('')}
+      ${meus.map((m,k)=>`<label class="stp meu"><input type="radio" name="stp" value="s${k}"><span style="color:${esc(m.cor)};border-color:${esc(m.cor)}">${esc(m.txt)}</span><button type="button" class="lnk-btn stDel" data-k="${k}" title="Apagar este carimbo salvo" aria-label="Apagar">×</button></label>`).join('')}
       <label class="stp"><input type="radio" name="stp" value="x"><span style="color:var(--text);border-color:var(--muted)">Outro…</span></label></div>
       <div class="frm" style="margin-top:12px">
         <div class="two"><div><label class="f">Texto (para “Outro”)</label><input type="text" id="stTxt" maxlength="28" placeholder="ex.: LANÇADO NO SISTEMA"></div><div><label class="f">Cor (para “Outro”)</label><input type="color" id="stCor" value="#1f4fa8"></div></div>
+        <label class="chk"><input type="checkbox" id="stGuardar" checked> Guardar o “Outro” para usar de novo</label>
         <label class="chk"><input type="checkbox" id="stData" checked> Incluir a data</label>
         <div class="two"><div><label class="f">Data</label><input type="text" id="stDt" value="${hoje}"></div><div><label class="f">Nome (opcional)</label><input type="text" id="stNome" value="${esc(nome)}" placeholder="quem carimbou"></div></div>
         <label class="chk"><input type="checkbox" id="stInc"> Levemente inclinado</label>
@@ -1611,17 +1659,25 @@ function openStamp(){
     ok:'Colocar carimbo',onOk:bg=>{
       const p=cfg(bg);if(!p.txt){toast('Digite o texto do carimbo.',true);return false}
       try{localStorage.setItem('editorpdf-carimbo-nome',$('#stNome',bg).value.trim())}catch(e){}
+      if($('input[name=stp]:checked',bg).value==='x'&&$('#stGuardar',bg).checked)
+        guardarCarimbos([{txt:p.txt,cor:p.cor},...carimbosSalvos().filter(m=>m.txt!==p.txt)].slice(0,8));
       const src=stampCanvas(p.txt,p.cor,p.linhas,p.inc);
       loadImg(src).then(im=>{const pg=S.pages[S.cur];const w=Math.min(170,pg.w*.4),h=w*im.height/im.width;
         addObj({page:S.cur,type:'img',x:(pg.w-w)/2,y:(pg.h-h)/2,w,h,src,ratio:im.width/im.height,mime:'png'});setTool('select')});
     }});
-  const cfg=bg=>{const k=$('input[name=stp]:checked',bg).value;const out=k==='x'?{txt:$('#stTxt',bg).value.trim().toUpperCase(),cor:$('#stCor',bg).value}:{txt:CARIMBOS[k][0],cor:CARIMBOS[k][1]};
+  const cfg=bg=>{const k=$('input[name=stp]:checked',bg).value;
+    const out=k==='x'?{txt:$('#stTxt',bg).value.trim().toUpperCase(),cor:$('#stCor',bg).value}:k[0]==='s'?{...(carimbosSalvos()[+k.slice(1)]||{txt:'',cor:'#000000'})}:{txt:CARIMBOS[k][0],cor:CARIMBOS[k][1]};
     out.linhas=[];if($('#stData',bg).checked&&$('#stDt',bg).value.trim())out.linhas.push($('#stDt',bg).value.trim());if($('#stNome',bg).value.trim())out.linhas.push($('#stNome',bg).value.trim());
     out.inc=$('#stInc',bg).checked;return out};
   const prev=()=>{const p=cfg(bg);$('#stPrev',bg).src=p.txt?stampCanvas(p.txt,p.cor,p.linhas,p.inc):''};
   bg.addEventListener('input',prev);bg.addEventListener('change',prev);prev();
+  $$('.stDel',bg).forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const k=+b.dataset.k;
+    guardarCarimbos(carimbosSalvos().filter((_,j)=>j!==k));const lb=b.closest('.stp');if($('input',lb).checked)$('input[name=stp]',bg).checked=true;
+    lb.remove();$$('.stp.meu input',bg).forEach((r,j)=>{r.value='s'+j});$$('.stDel',bg).forEach((d,j)=>{d.dataset.k=j});prev();toast('Carimbo apagado.')});
   $('[data-x]',bg)&&$('[data-x]',bg).addEventListener('click',()=>setTool('select'));
 }
+function carimbosSalvos(){try{const a=JSON.parse(localStorage.getItem('editorpdf-carimbos')||'[]');return Array.isArray(a)?a.filter(m=>m&&typeof m.txt==='string'&&/^#[0-9a-f]{6}$/i.test(m.cor||'')):[]}catch(e){return[]}}
+function guardarCarimbos(a){try{localStorage.setItem('editorpdf-carimbos',JSON.stringify(a))}catch(e){}}
 
 /* ================= buscar e substituir ================= */
 function addHits(i){
@@ -1775,24 +1831,36 @@ document.addEventListener('drop',async e=>{
 function renderProps(){
   const R=$('#right'),o=objById(S.sel);
   if(!S.doc){R.innerHTML='<h2>Propriedades</h2><p class="hint">Abra um PDF para começar.</p>';return}
+  const grupo=selecionados();
+  if(grupo.length>1){
+    R.innerHTML=`<h2>${grupo.length} objetos selecionados</h2><p class="hint">Arraste um deles para mover todos. Setas movem; Shift+clique tira ou junta um objeto.</p>
+      <label>Alinhar</label><div class="row" style="flex-wrap:wrap;gap:6px">
+        <button class="btn sm" data-al="esq">À esquerda</button><button class="btn sm" data-al="centro">Ao centro</button><button class="btn sm" data-al="dir">À direita</button>
+        <button class="btn sm" data-al="topo">Pelo topo</button><button class="btn sm" data-al="base">Pela base</button></div>
+      <div class="row" style="margin-top:16px"><button class="btn danger" id="gDel">${ic('trash')}Apagar os ${grupo.length}</button></div>`;
+    $('#gDel',R).onclick=removeSel;
+    $$('[data-al]',R).forEach(b=>b.onclick=()=>alinhar(b.dataset.al));
+    return;
+  }
   if(!o){
     const tips={select:'Clique em um objeto para selecioná-lo, arraste para mover.',edittext:'Passe o mouse sobre o texto do PDF e clique para editar. Enter confirma, Esc cancela.'+(S.srv?' Parágrafos inteiros são editados de uma vez, com quebra de linha automática.':''),redact:'Arraste sobre o que quer apagar de verdade: texto, imagem e desenho por baixo da tarja são removidos'+(S.srv?'.':' (só no modo avançado; no básico a tarja apenas cobre).'),text:'Clique na página para escrever.',highlight:'Arraste sobre o trecho que quer realçar.',underline:'Arraste sobre o trecho.',strike:'Arraste sobre o trecho.',draw:'Desenhe com o mouse.',rect:'Arraste para desenhar.',ellipse:'Arraste para desenhar.',line:'Arraste para desenhar.',note:'Clique onde quer a nota.',image:'Escolha uma imagem.',sign:'Escolha como assinar.',stamp:'Escolha o carimbo: ele entra no meio da página e você arrasta para o lugar.'};
     const stroke=['draw','rect','ellipse','line','underline','strike'].includes(S.tool),hl=S.tool==='highlight',txt=S.tool==='text';
     R.innerHTML=`<h2>${esc((TOOLS.find(t=>t[0]===S.tool)||[])[2]||'')}</h2><p class="hint">${tips[S.tool]||''}</p>`
       +(stroke?`<label>Cor</label><input type="color" id="dStroke" value="${S.defaults.stroke}"><label>Espessura</label><input type="number" id="dSw" min="1" max="20" value="${S.defaults.sw}">`:'')
       +(hl?`<label>Cor do realce</label><input type="color" id="dHl" value="${S.defaults.hl}">`:'')
-      +(txt?textProps(S.defaults,'d'):'')
+      +(txt?textProps(S.defaults,'d')+painelTextosSalvos():'')
       +(S.tool==='redact'?`<button class="btn" id="dAuto" style="margin-top:12px;width:100%" ${S.srv?'':'disabled'}>${ic('search')}Tarja automática…</button><p class="hint" style="margin-top:6px">Acha CPF, e-mail, telefone, nomes… e marca as tarjas para você conferir.</p>`:'')
       +formPanel()
       +(S.tool==='edittext'?(S.srv
         ?'<div class="warn" style="background:#e9f7ef;border-color:#9bd3b0;color:#14532d"><b>Modo avançado:</b> ao salvar, o texto antigo é apagado de verdade do arquivo e a fonte original é reaproveitada quando tiver as letras.</div>'
         :'<div class="warn"><b>Modo básico:</b> a troca cobre o trecho antigo e escreve o novo por cima. O texto antigo continua no arquivo (dá para copiar ou buscar). <b>Não use para esconder informação sigilosa.</b> Abra pelo “Abrir editor.bat” para apagar de verdade.</div>'):'');
-    bindDefaults();bindFormPanel();
+    bindDefaults();bindFormPanel();bindTextosSalvos();
     if($('#dAuto'))$('#dAuto').onclick=openAutoRedact;
     return;
   }
   const t=o.type;let h=`<h2>${{text:'Texto',rep:'Texto trocado',redact:'Tarja',img:'Imagem',hl:'Realce',ul:'Sublinhado',st:'Riscado',rect:'Retângulo',ellipse:'Elipse',line:'Linha',draw:'Desenho',note:'Nota'}[t]}</h2>`;
   if(t==='text'||t==='rep')h+=textProps(o,'o')+(t==='rep'?`<p class="hint" style="margin-top:10px">Original: “${esc(o.orig)}”</p>`:'');
+  if(t==='text'&&o.text.trim())h+=`<button class="btn sm" id="oGuardar" style="margin-top:12px;width:100%">${ic('txt')}Guardar como texto salvo</button>`;
   if(['hl','ul','st','rect','ellipse','line','draw'].includes(t))h+=`<label>Cor</label><input type="color" id="oColor" value="${o.color}">`+(t!=='hl'?`<label>Espessura</label><input type="number" id="oSw" min="1" max="20" value="${o.sw}">`:'');
   if(t==='rect')h+=`<label>Preenchimento</label><div class="row"><input type="color" id="oFill" value="${o.fill||'#ffffff'}"><label style="margin:0"><input type="checkbox" id="oFillOn" ${o.fill?'checked':''}> usar</label></div>`;
   if(t==='note')h+=`<label>Texto</label><input type="text" id="oNote" value="${esc(o.text)}">`;
@@ -1807,7 +1875,45 @@ function renderProps(){
   if(g('oFill')){const f=()=>upd(()=>o.fill=g('oFillOn').checked?g('oFill').value:'');g('oFill').onchange=f;g('oFillOn').onchange=f}
   if(g('oNote'))g('oNote').onchange=e=>upd(()=>o.text=e.target.value);
   if(g('oRedFill'))g('oRedFill').onchange=e=>upd(()=>o.fill=e.target.value);
+  if(g('oGuardar'))g('oGuardar').onclick=()=>{
+    const novo={text:o.text,font:o.font,bold:!!o.bold,italic:!!o.italic,fs:o.fs,color:o.color};
+    guardarTextos([novo,...textosSalvos().filter(x=>x.text!==o.text)].slice(0,12));toast('Texto salvo. Ele aparece na ferramenta “Texto”.');
+  };
   bindText(o);
+}
+/* ---- textos salvos (ferramenta Texto): frases que se repetem, com {data} e {hora} trocados na hora ---- */
+function textosSalvos(){try{const a=JSON.parse(localStorage.getItem('editorpdf-textos')||'[]');return Array.isArray(a)?a.filter(x=>x&&typeof x.text==='string'):[]}catch(e){return[]}}
+function guardarTextos(a){try{localStorage.setItem('editorpdf-textos',JSON.stringify(a))}catch(e){toast('Não foi possível guardar neste aparelho.',true)}}
+const expandirTexto=t=>String(t).replace(/\{data\}/gi,new Date().toLocaleDateString('pt-BR')).replace(/\{hora\}/gi,new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+function painelTextosSalvos(){
+  const a=textosSalvos();
+  return `<div class="fbox" style="margin-top:14px"><b>${ic('txt')}Textos salvos</b>
+    ${a.length?`<div class="tsList">${a.map((x,k)=>`<div class="tsItem"><button class="btn sm" data-ts="${k}" title="Colocar na página atual">${esc(x.text.length>40?x.text.slice(0,40)+'…':x.text)}</button><button class="lnk-btn" data-tsx="${k}" title="Apagar este texto salvo" aria-label="Apagar">×</button></div>`).join('')}</div>`
+      :'<p class="hint">Escreva um texto, selecione e clique em “Guardar como texto salvo”. Use {data} e {hora} para preencher sozinho.</p>'}
+    <div class="row" style="margin-top:8px"><input type="text" id="tsNovo" placeholder="ex.: Recebido em {data}" style="flex:1"><button class="btn sm" id="tsAdd">Adicionar</button></div></div>`;
+}
+function bindTextosSalvos(){
+  const R=$('#right');
+  $$('[data-ts]',R).forEach(b=>b.onclick=()=>{
+    const x=textosSalvos()[+b.dataset.ts];if(!x||!S.doc)return;const pg=S.pages[S.cur];
+    addObj({page:S.cur,type:'text',x:pg.w*.3,y:pg.h*.45,text:expandirTexto(x.text),fs:x.fs||S.defaults.fs,font:x.font||'Helvetica',bold:!!x.bold,italic:!!x.italic,color:x.color||'#000000'});
+    setTool('select');toast('Texto colocado no meio da página: arraste para o lugar.');
+  });
+  $$('[data-tsx]',R).forEach(b=>b.onclick=()=>{guardarTextos(textosSalvos().filter((_,k)=>k!==+b.dataset.tsx));renderProps()});
+  const add=$('#tsAdd',R);if(add)add.onclick=()=>{const v=$('#tsNovo',R).value.trim();if(!v)return;
+    const d=S.defaults;guardarTextos([{text:v,font:d.font,bold:d.bold,italic:d.italic,fs:d.fs,color:d.color},...textosSalvos().filter(x=>x.text!==v)].slice(0,12));renderProps()};
+}
+// alinha os objetos selecionados pela caixa que cada um ocupa na tela
+function alinhar(modo){
+  const grupo=selecionados();if(grupo.length<2)return;const L=$('.layer',S.pages[grupo[0].page].el);
+  const caixa=o=>{const el=$(`.o[data-id="${o.id}"]`,L);return el?{x:el.offsetLeft,y:el.offsetTop,w:el.offsetWidth,h:el.offsetHeight}:null};
+  const cx=grupo.map(o=>[o,caixa(o)]).filter(([,c])=>c);if(cx.length<2)return;
+  const x0=Math.min(...cx.map(([,c])=>c.x)),x1=Math.max(...cx.map(([,c])=>c.x+c.w)),y0=Math.min(...cx.map(([,c])=>c.y)),y1=Math.max(...cx.map(([,c])=>c.y+c.h));
+  for(const [o,c] of cx){
+    const dx=modo==='esq'?x0-c.x:modo==='dir'?x1-(c.x+c.w):modo==='centro'?(x0+x1)/2-(c.x+c.w/2):0;
+    const dy=modo==='topo'?y0-c.y:modo==='base'?y1-(c.y+c.h):0;moverObj(o,dx,dy);
+  }
+  renderLayer(grupo[0].page);pushHist();
 }
 function formPanel(){
   if(!S.hasForm)return '';
@@ -2223,10 +2329,9 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
   if(e.key==='Delete'||e.key==='Backspace'){if(S.sel){e.preventDefault();removeSel()}return}
   if(e.key==='Escape'){if(S.sel){select(null)}else setTool('select');return}
-  const o=objById(S.sel);
-  if(o&&e.key.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?10:1;const dx=e.key==='ArrowLeft'?-st:e.key==='ArrowRight'?st:0,dy=e.key==='ArrowUp'?-st:e.key==='ArrowDown'?st:0;
-    if(o.type==='draw')o.pts=o.pts.map(p=>[p[0]+dx,p[1]+dy]);else{o.x+=dx;o.y+=dy;if(o.type==='line'){o.x2+=dx;o.y2+=dy}}
-    renderLayer(o.page);clearTimeout(keydebounce);keydebounce=setTimeout(pushHist,400);
+  const grupo=selecionados();
+  if(grupo.length&&e.key.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?10:1;const dx=e.key==='ArrowLeft'?-st:e.key==='ArrowRight'?st:0,dy=e.key==='ArrowUp'?-st:e.key==='ArrowDown'?st:0;
+    grupo.forEach(o=>moverObj(o,dx,dy));new Set(grupo.map(o=>o.page)).forEach(renderLayer);clearTimeout(keydebounce);keydebounce=setTimeout(pushHist,400);
   }
 });
 let keydebounce=null;
@@ -2270,7 +2375,7 @@ const TOOLS2=[
    {id:'senha',t:'password',l:'Senha (mín. 4 caracteres)'},{id:'imprimir',t:'check',l:'Permitir imprimir',def:true},{id:'copiar',t:'check',l:'Permitir copiar texto',def:true},{id:'editar',t:'check',l:'Permitir editar',def:false}]},
  {id:'desbloquear',cat:'edseg',nome:'Desbloquear PDF',desc:'Remova a senha de um PDF, se você souber a senha.',icone:'unlock',cor:'c10',acc:'.pdf',multi:true,min:1,run:'Desbloquear',opts:[
    {id:'senha',t:'password',l:'Senha do arquivo (deixe vazio se ele abre sem senha)'}]},
- {id:'comparar',cat:'edseg',nome:'Comparar PDFs',desc:'Veja o que mudou no texto entre duas versões.',icone:'compare',cor:'c11',acc:'.pdf',multi:true,min:2,max:2,run:'Comparar',opts:[],dica:'Escolha 2 arquivos: o primeiro é o antigo (A) e o segundo, o novo (B).'},
+ {id:'comparar',cat:'edseg',nome:'Comparar PDFs',desc:'Veja o que mudou entre duas versões, com as páginas lado a lado.',icone:'compare',cor:'c11',acc:'.pdf',multi:true,min:2,max:2,run:'Comparar',opts:[],dica:'Escolha 2 arquivos: o primeiro é o antigo (A) e o segundo, o novo (B). O relatório lista as mudanças e mostra cada página com diferença lado a lado, com as palavras que saíram em vermelho e as que entraram em verde.'},
  {id:'img2pdf',cat:'paraPdf',nome:'Imagem para PDF',desc:'Transforme JPG, PNG e outras imagens em PDF.',icone:'image',cor:'c1',acc:'.jpg,.jpeg,.png,.webp,.bmp,.tif,.tiff,.gif',multi:true,ordem:true,min:1,run:'Criar PDF',opts:[
    {id:'tamanho',t:'select',l:'Tamanho da página',def:'a4',o:[['a4','A4'],['carta','Carta'],['imagem','Do tamanho da imagem']]},
    {id:'orientacao',t:'select',l:'Orientação',def:'auto',o:[['auto','Automática'],['retrato','Retrato'],['paisagem','Paisagem']],show:v=>v.tamanho!=='imagem'},

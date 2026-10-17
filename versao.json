@@ -1,18 +1,19 @@
 {
     "windows":  {
-                    "versao":  "2.1",
+                    "versao":  "2.2",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Abre PDF com senha: o app pede a senha e, ao salvar, mantém o arquivo protegido",
-                                      "PDF escaneado: em \"Editar texto\", o app reconhece o texto (OCR) e deixa editar direto na página"
+                                      "Textos e carimbos salvos: guarde frases como \"Recebido em {data}\" e carimbos próprios para usar com um clique",
+                                      "Selecione vários objetos de uma vez (Shift+clique ou arrastando uma caixa) para mover, alinhar ou apagar juntos",
+                                      "Comparar PDFs agora mostra as páginas lado a lado, com as palavras que mudaram marcadas"
                                   ]
                 },
     "android":  {
-                    "versao":  "2.1",
+                    "versao":  "2.2",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Abre PDF com senha: o app pede a senha e, ao salvar, mantém o arquivo protegido",
-                                      "PDF escaneado: em \"Editar texto\", o app reconhece o texto (OCR) e deixa editar direto na página"
+                                      "Textos e carimbos salvos: guarde frases como \"Recebido em {data}\" e carimbos próprios para usar com um clique",
+                                      "Comparar PDFs agora mostra as páginas lado a lado, com as palavras que mudaram marcadas"
                                   ]
                 }
 }
