@@ -1889,23 +1889,52 @@ $('#bHome').onclick=goHome;
 /* ================= tela inicial ================= */
 // saudação da tela inicial: sorteia uma frase conforme o horário e o dia da semana
 const SAUDACOES={
-  madrugada:['Trabalhando até tarde? Vamos nessa.','Madrugada produtiva, hein!','O café ainda está quente? Bora lá.','Silêncio total: hora boa para focar.'],
-  manha:['Bom dia, vamos trabalhar!','Bom dia! Pronto para começar?','Bom dia! O que vamos resolver hoje?','Bom dia! Café na mão e mãos à obra.','Bom dia! Que o dia renda.','Começando o dia com tudo!'],
-  tarde:['Boa tarde, vamos trabalhar!','Boa tarde! O que vem agora?','Boa tarde! Seguimos firme.','Boa tarde! Bora terminar o que falta?','De volta do almoço? Vamos lá.','Boa tarde! Mais um documento na conta.'],
-  noite:['Boa noite, vamos trabalhar!','Boa noite! Só mais um PDF?','Boa noite! Vamos fechar o dia bem.','Boa noite! Ainda dá tempo.','Hora extra? A gente ajuda.'],
-  dia:{1:['Segunda-feira: semana nova, vamos com tudo!','Boa segunda! Bora organizar a semana.'],
-       5:['Sexta-feira! Vamos fechar a semana bem.','Sextou! Só mais esse documento.'],
-       6:['Trabalhando no sábado? Respeito.'],0:['Domingo e trabalhando? Vamos rapidinho.']}
+  madrugada:['Trabalhando até tarde? Vamos nessa.','Madrugada produtiva, hein!','O café ainda está quente? Bora lá.','Silêncio total: hora boa para focar.',
+    'Ainda por aqui a essa hora? A gente acompanha.','Enquanto todo mundo dorme, a gente resolve.','Madrugada de missão: vamos lá.','Só um PDF e cama, combinado?',
+    'O mundo dorme, os documentos não.','Hora boa: ninguém liga, ninguém interrompe.','Turno da madrugada iniciado.','Coruja de plantão? Bora.'],
+  manha:['Bom dia, vamos trabalhar!','Bom dia! Tudo pronto para começar?','Bom dia! O que vamos resolver hoje?','Bom dia! Café na mão e mãos à obra.','Bom dia! Que o dia renda.','Começando o dia com tudo!',
+    'Bom dia! Primeiro o café, depois o PDF.','Bom dia! Hoje a fila de documentos anda.','Bom dia! Vamos deixar tudo em ordem.','Manhã nova, documento novo.',
+    'Bom dia! Uma coisa de cada vez e tudo se resolve.','Bom dia! Bora tirar esse da lista.','Bom dia! O dia começa agora.','Bom dia! Vamos fazer valer a manhã.',
+    'Bom dia! Mesa limpa, PDF aberto.','Bom dia! Hoje rende, pode apostar.','Bom dia! Tudo certo por aí?','Bom dia! Que venham os documentos.'],
+  tarde:['Boa tarde, vamos trabalhar!','Boa tarde! O que vem agora?','Boa tarde! Seguimos firme.','Boa tarde! Bora terminar o que falta?','De volta do almoço? Vamos lá.','Boa tarde! Mais um documento na conta.',
+    'Boa tarde! Metade do dia já foi, a outra metade é nossa.','Boa tarde! Um cafezinho e seguimos.','Boa tarde! Vamos riscar mais um da lista.','Boa tarde! O ritmo continua.',
+    'Boa tarde! Falta pouco para fechar o dia.','Boa tarde! Mais um ajuste e pronto.','Boa tarde! Segunda rodada do dia.','Pós-almoço com energia: vamos nessa.',
+    'Boa tarde! Que tal resolver esse agora?','Boa tarde! Documento aberto, problema resolvido.','Boa tarde! Ainda dá para fazer muita coisa hoje.','Boa tarde! Bora deixar tudo pronto antes do fim do expediente.'],
+  noite:['Boa noite, vamos trabalhar!','Boa noite! Só mais um PDF?','Boa noite! Vamos fechar o dia bem.','Boa noite! Ainda dá tempo.','Hora extra? A gente ajuda.',
+    'Boa noite! Último da lista e descanso merecido.','Boa noite! Vamos resolver rapidinho.','Boa noite! Fechando os pendentes do dia.','Boa noite! Amanhã agradece.',
+    'Boa noite! Um último ajuste antes de desligar.','Boa noite! O dia foi longo, esse vai ser rápido.','Boa noite! Deixa que a gente ajuda a terminar.','Boa noite! Missão: sair cedo da frente do computador.',
+    'Boa noite! Mais um e o dia está ganho.','Boa noite! Vamos encerrar com chave de ouro.'],
+  dia:{1:['Segunda-feira: semana nova, vamos com tudo!','Boa segunda! Bora organizar a semana.','Segunda-feira chegou: café reforçado e vamos.','Semana começando: vamos deixar tudo em dia.'],
+       2:['Terça-feira: a semana já engrenou.','Boa terça! Ritmo bom, vamos manter.'],
+       3:['Quarta-feira: metade da semana, metade do caminho.','Boa quarta! Já passou da metade.'],
+       4:['Quinta-feira: a sexta já está logo ali.','Boa quinta! Quase lá.'],
+       5:['Sexta-feira! Vamos fechar a semana bem.','Sextou! Só mais esse documento.','Sexta-feira: último gás da semana!','Sextou! Resolve esse e o fim de semana começa.'],
+       6:['Trabalhando no sábado? Respeito.','Sábado de expediente? Vamos rapidinho.','Sábado também é dia de resolver pendência.'],
+       0:['Domingo e trabalhando? Vamos rapidinho.','Domingo? Então que seja rápido.','Adiantando a semana no domingo? Boa.']},
+  // datas especiais (mês-dia): têm preferência no dia
+  data:{'01-01':['Feliz Ano Novo! Começando o ano com tudo.','Ano novo, PDF novo!'],
+        '12-24':['Véspera de Natal! Só mais esse e festa.'],'12-25':['Feliz Natal! Trabalhando até hoje? A gente ajuda.'],
+        '12-31':['Último dia do ano! Bora fechar com chave de ouro.'],
+        '05-01':['Dia do Trabalho e trabalhando? Vamos rapidinho.'],
+        '10-15':['Feliz Dia do Professor!']},
+  // fim do mês: fechamento
+  fimMes:['Fim de mês: hora de fechar os relatórios.','Fechamento do mês chegando: vamos deixar tudo em dia.']
 };
 function saudacao(){
   const d=new Date(),h=d.getHours();
   const p=h<5?'madrugada':h<12?'manha':h<18?'tarde':'noite';
+  const md=String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   let lista=[...SAUDACOES[p]];
   if(p!=='madrugada'&&SAUDACOES.dia[d.getDay()])lista=lista.concat(SAUDACOES.dia[d.getDay()]);
-  let ult=null;try{ult=sessionStorage.getItem('editorpdf-saud')}catch(e){}
-  if(lista.length>1)lista=lista.filter(t=>t!==ult);  // não repete a última
+  const ultimoDia=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  if(p!=='madrugada'&&d.getDate()>=ultimoDia-2)lista=lista.concat(SAUDACOES.fimMes);
+  if(SAUDACOES.data[md])lista=SAUDACOES.data[md].concat(SAUDACOES.data[md],lista.slice(0,4)); // data especial aparece bem mais
+  // não repete as últimas que apareceram (lembra entre uma abertura e outra)
+  let ult=[];try{ult=JSON.parse(localStorage.getItem('editorpdf-saud')||'[]')}catch(e){}
+  if(!Array.isArray(ult))ult=[];
+  const novas=lista.filter(t=>!ult.includes(t));if(novas.length)lista=novas;
   const t=lista[Math.floor(Math.random()*lista.length)];
-  try{sessionStorage.setItem('editorpdf-saud',t)}catch(e){}
+  try{localStorage.setItem('editorpdf-saud',JSON.stringify([t,...ult.filter(x=>x!==t)].slice(0,8)))}catch(e){}
   $('#hello').textContent=t;
 }
 saudacao();

@@ -1,24 +1,18 @@
 {
     "windows":  {
-                    "versao":  "1.7",
+                    "versao":  "1.8",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Mais rápido com PDFs grandes: editar texto quase sem espera",
-                                      "Selecionar e copiar texto, links clicáveis e sumário na lateral",
-                                      "Arquivos recentes na tela inicial",
-                                      "Recupera as edições se o app fechar sem salvar",
-                                      "Assinatura salva para reutilizar"
+                                      "Muito mais mensagens de saudação, com dias da semana e datas especiais",
+                                      "Não repete as últimas saudações"
                                   ]
                 },
     "android":  {
-                    "versao":  "1.3",
+                    "versao":  "1.4",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Mais rápido com PDFs grandes",
-                                      "Selecionar e copiar texto, links clicáveis e sumário",
-                                      "Arquivos recentes na tela inicial",
-                                      "Recupera as edições se o app fechar sem salvar",
-                                      "Assinatura salva para reutilizar"
+                                      "Muito mais mensagens de saudação, com dias da semana e datas especiais",
+                                      "Não repete as últimas saudações"
                                   ]
                 }
 }
