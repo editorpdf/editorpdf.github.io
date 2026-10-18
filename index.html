@@ -92,6 +92,7 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .main.no-props{grid-template-columns:72px 208px minmax(0,1fr) 0}
 .main.no-thumbs.no-props{grid-template-columns:72px 0 minmax(0,1fr) 0}
 .main.no-thumbs .thumbs,.main.no-props .right{display:none}
+#bProps{display:none}
 .rail{grid-column:1}.thumbs{grid-column:2}.view{grid-column:3}.right{grid-column:4}
 .main.is-home{grid-template-columns:0 0 minmax(0,1fr) 0}
 .main.is-home .rail,.main.is-home .thumbs,.main.is-home .right{display:none}
@@ -518,7 +519,8 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
   #bOpen svg,#bTools svg,#bOrg svg,#bSave svg{display:block;width:20px;height:20px}
   #bExport svg{width:20px!important;height:20px!important}
   #bSave svg{color:#fff}
-  #bThumbs,#bRedo,#bTheme,#bPrint,.top .sep,#mode,.brand b{display:none}
+  #bRedo,#bTheme,#bPrint,.top .sep,#mode,.brand b{display:none}
+  #bProps{display:inline-flex}
   .btn.icon,#bOpen,#bTools,#bOrg,#bExport,#bSave{width:36px;height:38px}
   .brand{padding:4px}
   .main,.main.no-thumbs,.main.no-props,.main.no-thumbs.no-props{grid-template-columns:0 0 minmax(0,1fr) 0}
@@ -572,8 +574,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
     <button class="btn icon ghost" id="bFind" disabled aria-label="Buscar e substituir" title="Buscar e substituir (Ctrl+F)"><svg class="i"><use href="#i-search"/></svg></button>
     <button class="btn icon ghost" id="bUndo" disabled aria-label="Desfazer" title="Desfazer (Ctrl+Z)"><svg class="i"><use href="#i-undo"/></svg></button>
     <button class="btn icon ghost" id="bRedo" disabled aria-label="Refazer" title="Refazer (Ctrl+Y)"><svg class="i"><use href="#i-redo"/></svg></button>
-    <span class="sep"></span>
-    <button class="btn icon ghost" id="bThumbs" aria-pressed="true" aria-label="Painel de páginas" title="Mostrar ou esconder as páginas"><svg class="i"><use href="#i-panel-l"/></svg></button>
+    <!-- só no celular: abre e fecha a gaveta de propriedades (no computador os painéis ficam sempre abertos) -->
     <button class="btn icon ghost" id="bProps" aria-pressed="true" aria-label="Painel de propriedades" title="Mostrar ou esconder as propriedades"><svg class="i"><use href="#i-panel-r"/></svg></button>
     <span class="sep"></span>
     <span class="badge" id="mode" title="Verificando…">…</span>
@@ -2304,9 +2305,8 @@ $('#xAuto').onclick=()=>{menuOpen(false);openAutoRedact()};
 $('#bFind').onclick=openFind;
 $('#bOrg').onclick=()=>{const o=$('#organizer');o&&!o.hidden?closeOrganizer():openOrganizer()};
 function refitSoon(){if(S.fit&&S.doc)setTimeout(()=>{fitWidth();setScale(S.scale,true)},230)}
-$('#bThumbs').onclick=()=>{const off=$('#mainGrid').classList.toggle('no-thumbs');$('#bThumbs').setAttribute('aria-pressed',String(!off));refitSoon()};
 // celular: começa sem os painéis laterais (as propriedades abrem como gaveta pelo botão)
-if(matchMedia('(max-width:700px)').matches){$('#mainGrid').classList.add('no-props','no-thumbs');$('#bProps').setAttribute('aria-pressed','false');$('#bThumbs').setAttribute('aria-pressed','false')}
+if(matchMedia('(max-width:700px)').matches){$('#mainGrid').classList.add('no-props','no-thumbs');$('#bProps').setAttribute('aria-pressed','false')}
 $('#bProps').onclick=()=>{const off=$('#mainGrid').classList.toggle('no-props');$('#bProps').setAttribute('aria-pressed',String(!off));refitSoon()};
 function setTheme(t){document.documentElement.dataset.theme=t;$('#bTheme use').setAttribute('href',t==='dark'?'#i-sun':'#i-moon');try{localStorage.setItem('editorpdf-tema',t)}catch(e){}}
 $('#bTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');

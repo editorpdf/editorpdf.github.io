@@ -1,19 +1,16 @@
 {
     "windows":  {
-                    "versao":  "2.2",
+                    "versao":  "2.2.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Textos e carimbos salvos: guarde frases como \"Recebido em {data}\" e carimbos próprios para usar com um clique",
-                                      "Selecione vários objetos de uma vez (Shift+clique ou arrastando uma caixa) para mover, alinhar ou apagar juntos",
-                                      "Comparar PDFs agora mostra as páginas lado a lado, com as palavras que mudaram marcadas"
+                                      "Barra de cima mais limpa: saíram os botões de mostrar e esconder painéis, que não eram necessários"
                                   ]
                 },
     "android":  {
-                    "versao":  "2.2",
+                    "versao":  "2.2.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Textos e carimbos salvos: guarde frases como \"Recebido em {data}\" e carimbos próprios para usar com um clique",
-                                      "Comparar PDFs agora mostra as páginas lado a lado, com as palavras que mudaram marcadas"
+                                      "Ajustes na barra de cima"
                                   ]
                 }
 }
