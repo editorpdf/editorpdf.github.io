@@ -366,6 +366,21 @@ button:disabled{opacity:.4}
 .tool[aria-pressed=true]{background:var(--subtle);color:var(--text)}
 .tool[aria-pressed=true]::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:2px;background:var(--accent)}
 .tool[aria-pressed=true] svg{color:var(--accent)}
+/* barra de ferramentas mais larga (os nomes cabem inteiros) e com efeito "Dock": o ícone sob o mouse e os vizinhos
+   crescem; --k (0 a 1) é calculado no JS pela distância do mouse (ampliarRail) */
+.main,.main.no-thumbs{grid-template-columns:84px 208px minmax(0,1fr) 264px}
+.main.no-thumbs{grid-template-columns:84px 0 minmax(0,1fr) 264px}
+.main.no-props{grid-template-columns:84px 208px minmax(0,1fr) 0}
+.main.no-thumbs.no-props{grid-template-columns:84px 0 minmax(0,1fr) 0}
+.rail{padding:8px 0;gap:3px;overflow-x:hidden}
+.tool{--k:0;width:74px;height:calc(50px + 16px*var(--k));border-radius:10px;font-size:10.5px;gap:4px;transition:height .14s ease-out,background .15s,color .15s}
+.tool span{white-space:nowrap;line-height:1.15;transition:transform .14s ease-out}
+.tool svg{width:21px;height:21px;transform:scale(calc(1 + .6*var(--k)));transform-origin:50% 70%;transition:transform .14s ease-out}
+.tool[aria-pressed=true]::before{top:12px;bottom:12px}
+.rail.dock .tool:hover{background:transparent}
+.rail.dock .tool[aria-pressed=true]{background:var(--subtle)}
+.rail.dock .tool:hover span{color:var(--text);font-weight:600}
+@media (prefers-reduced-motion:reduce){.tool,.tool svg{transition:none}}
 .thumbs{background:var(--panel);border:1px solid var(--border);border-width:1px 1px 0 1px;border-radius:8px 0 0 0}
 .main.no-thumbs .view{border-radius:8px 0 0 0;border-left:1px solid var(--border)}
 .thumbs h3{font-size:12px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--text);padding:12px 12px 4px}
@@ -507,7 +522,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
 ::-webkit-scrollbar-thumb:hover{border-width:3px}
 ::-webkit-scrollbar-track{background:transparent}
 
-@media(max-width:1000px){.main,.main.no-thumbs,.main.no-props{grid-template-columns:72px 0 minmax(0,1fr) 0}.thumbs,.right{display:none}}
+@media(max-width:1000px){.main,.main.no-thumbs,.main.no-props,.main.no-thumbs.no-props{grid-template-columns:84px 0 minmax(0,1fr) 0}.thumbs,.right{display:none}}
 /* ---- celular: ferramentas embaixo, propriedades como gaveta, botões só com ícone ---- */
 @media(max-width:700px){
   .app{grid-template-rows:52px minmax(0,1fr) 30px}
@@ -527,8 +542,8 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
   .thumbs{display:none!important}
   .rail{position:fixed;left:0;right:0;bottom:30px;height:62px;flex-direction:row;align-items:center;overflow-x:auto;overflow-y:hidden;padding:0 6px;gap:2px;z-index:30;border-top:1px solid var(--border);background:var(--panel)}
   .rsep{width:1px;height:34px;margin:0 4px}
-  .tool{width:62px;height:54px;font-size:9.5px}
-  .tool span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px}
+  .tool{width:70px;height:54px;font-size:9.5px;--k:0!important}
+  .tool span{white-space:nowrap}
   .tool[aria-pressed=true]::before{left:14px;right:14px;top:auto;bottom:2px;width:auto;height:3px}
   .pages{padding:10px 8px 90px;gap:10px}
   .right{display:block!important;position:fixed;left:0;right:0;bottom:92px;max-height:46vh;z-index:31;border:1px solid var(--border);border-radius:12px 12px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.18);padding:12px 16px 16px}
@@ -808,7 +823,7 @@ const TOOLS=[
  ['highlight','hl','Realçar'],['underline','ul','Sublinhar'],['strike','st','Riscar'],['draw','pen','Desenhar'],['-'],
  ['rect','rect','Retângulo'],['ellipse','ell','Elipse'],['line','line','Linha'],['note','note','Nota'],['stamp','carimbo','Carimbo'],['-'],['redact','redact','Tarja']
 ];
-$('#rail').innerHTML=TOOLS.map(([id,i,l])=>id==='-'?'<div class="rsep"></div>':`<button class="tool" data-tool="${id}" aria-pressed="${id==='select'}" title="${l}">${ic(i)}<span>${l}</span></button>`).join('');
+$('#rail').innerHTML=TOOLS.map(([id,i,l])=>id==='-'?'<div class="rsep"></div>':`<button class="tool" data-tool="${id}" aria-pressed="${id==='select'}">${ic(i)}<span>${l}</span></button>`).join('');
 
 /* ================= abrir ================= */
 async function openDoc(bytes,{keepView=false}={}){
@@ -1218,6 +1233,17 @@ function setTool(t){
   if(t==='stamp')openStamp();
 }
 $('#rail').addEventListener('click',e=>{const b=e.target.closest('.tool');if(b)setTool(b.dataset.tool)});
+// efeito "Dock" do Mac: com o mouse sobre a barra, o ícone mais perto cresce e os vizinhos crescem um pouco menos
+(()=>{
+  const rail=$('#rail'),ALCANCE=95;let quadro=0,ultimoY=null;
+  const desligado=()=>matchMedia('(max-width:700px), (prefers-reduced-motion: reduce)').matches;
+  const aplicar=()=>{quadro=0;if(ultimoY==null)return;
+    $$('.tool',rail).forEach(b=>{const r=b.getBoundingClientRect(),d=Math.abs(r.top+r.height/2-ultimoY);
+      const k=Math.max(0,1-d/ALCANCE);b.style.setProperty('--k',(k*k*(3-2*k)).toFixed(3))})}; // curva suave (smoothstep)
+  rail.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||desligado())return;
+    rail.classList.add('dock');ultimoY=e.clientY;if(!quadro)quadro=requestAnimationFrame(aplicar)});
+  rail.addEventListener('pointerleave',()=>{ultimoY=null;rail.classList.remove('dock');$$('.tool',rail).forEach(b=>b.style.setProperty('--k','0'))});
+})();
 function applyToolClass(){
   const creation=['text','highlight','underline','strike','draw','rect','ellipse','line','note','redact','image','sign','stamp'].includes(S.tool);
   $$('.layer').forEach(L=>{L.className='layer t-'+S.tool+(creation&&!['image','sign','stamp'].includes(S.tool)?' cross':'')});

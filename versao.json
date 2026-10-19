@@ -1,16 +1,16 @@
 {
     "windows":  {
-                    "versao":  "2.2.1",
+                    "versao":  "2.3",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Barra de cima mais limpa: saíram os botões de mostrar e esconder painéis, que não eram necessários"
+                                      "Barra de ferramentas nova: os nomes aparecem inteiros e os ícones crescem ao passar o mouse, como na Dock do Mac"
                                   ]
                 },
     "android":  {
-                    "versao":  "2.2.1",
+                    "versao":  "2.3",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Ajustes na barra de cima"
+                                      "Barra de ferramentas com os nomes inteiros, sem cortes"
                                   ]
                 }
 }
