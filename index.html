@@ -380,6 +380,34 @@ button:disabled{opacity:.4}
 .rail.dock .tool:hover{background:transparent}
 .rail.dock .tool[aria-pressed=true]{background:var(--subtle)}
 .rail.dock .tool:hover span{color:var(--text);font-weight:600}
+/* o mesmo efeito na barra de cima (ícones crescem, sem mudar o tamanho da barra) e no menu Exportar */
+.top .btn svg,.top .brand .logo{transform:scale(calc(1 + .42*var(--k,0)));transition:transform .14s ease-out}
+/* mesa de vários PDFs */
+.modal.mesa{width:min(1180px,calc(100vw - 32px));max-width:none;overflow:hidden;height:min(860px,calc(100vh - 32px));display:flex;flex-direction:column;padding:16px 18px 12px}
+.mesa-top{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.mesa-top h2{margin:0}.mesa-top .sub{margin:2px 0 0}
+.mesa-sel{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--accent-soft)}
+.mesa-sel b{margin-right:6px}.msel-mover{height:30px;border:1px solid var(--border);border-radius:8px;background:var(--field);color:var(--text)}
+.mesa-corpo{flex:1;overflow-y:auto;overflow-x:hidden;margin:12px 0 0;display:flex;flex-direction:column;gap:12px}
+.marq{border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--panel)}
+.marq-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}.marq-top .spacer{flex:1}
+.marq-top input{font:inherit;font-weight:600;border:1px solid transparent;border-radius:6px;padding:4px 6px;background:transparent;color:var(--text);min-width:120px;width:min(320px,40vw)}
+.marq-top input:hover,.marq-top input:focus{border-color:var(--border);background:var(--field)}
+.marq-pags{display:flex;flex-wrap:wrap;gap:10px;min-height:60px}
+.mp{width:96px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border-radius:8px;border:2px solid transparent;cursor:pointer;user-select:none}
+.mp:hover{background:var(--subtle)}
+.mp.on{border-color:var(--accent);background:var(--accent-soft)}
+.mp canvas{width:80px;height:104px;object-fit:contain;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mp canvas.deit{width:84px;height:62px;margin:21px 0}
+.mp span{font-size:11.5px;color:var(--muted)}
+.mesa-vazia{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--text);border:2px dashed var(--border);border-radius:14px;padding:30px}
+.mesa-vazia svg{width:40px;height:40px;color:var(--muted)}
+@media(max-width:700px){.modal.mesa{width:100vw;height:100vh;border-radius:0;padding:12px}.mp{width:82px}.mp canvas{width:68px;height:88px}}
+.chk.cfg{display:flex;gap:10px;align-items:flex-start;margin:0 0 14px;cursor:pointer}
+.chk.cfg input{margin-top:3px;width:16px;height:16px;flex:none}
+.chk.cfg small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.menu button .mi{transform:scale(calc(1 + .35*var(--k,0)));transition:transform .14s ease-out}
+.menu button .mi+span{transform:translateX(calc(4px*var(--k,0)));transition:transform .14s ease-out}
 @media (prefers-reduced-motion:reduce){.tool,.tool svg{transition:none}}
 .thumbs{background:var(--panel);border:1px solid var(--border);border-width:1px 1px 0 1px;border-radius:8px 0 0 0}
 .main.no-thumbs .view{border-radius:8px 0 0 0;border-left:1px solid var(--border)}
@@ -594,6 +622,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
     <span class="sep"></span>
     <span class="badge" id="mode" title="Verificando…">…</span>
     <button class="btn icon ghost" id="bTheme" aria-label="Alternar tema claro e escuro" title="Tema claro/escuro"><svg class="i"><use href="#i-moon"/></svg></button>
+    <button class="btn icon ghost" id="bConfig" aria-label="Configurações" title="Configurações"><svg class="i"><use href="#i-gear"/></svg></button>
     <button class="btn icon ghost" id="bPrint" disabled aria-label="Imprimir" title="Imprimir (Ctrl+P)"><svg class="i"><use href="#i-print"/></svg></button>
     <div class="dd">
       <button class="btn" id="bExport" disabled aria-haspopup="menu" aria-expanded="false">Exportar <svg class="i" style="width:14px;height:14px"><use href="#i-chev"/></svg></button>
@@ -710,6 +739,7 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
 <symbol id="i-slides" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8"/></symbol>
 <symbol id="i-txt" viewBox="0 0 24 24"><path d="M5 6h14M5 11h14M5 16h9"/></symbol>
 <symbol id="i-rot" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
 <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
 <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
@@ -932,7 +962,10 @@ function liberarPagina(i){
 function buildPages(){
   const host=$('#pages');host.innerHTML='';
   if(io)io.disconnect();if(longeIO)longeIO.disconnect();
-  io=new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting)renderPage(+e.target.dataset.i)}},{root:$('#view'),rootMargin:'600px 0px'});
+  // pg.perto: a página está na tela ou a até 600 px dela. Só essas pedem os blocos de texto ("Editar texto"):
+  // num PDF de 300 páginas, analisar todas de uma vez ocupava o servidor por segundos
+  io=new IntersectionObserver(es=>{for(const e of es){const i=+e.target.dataset.i,pg=S.pages[i];if(!pg)continue;pg.perto=e.isIntersecting;
+    if(e.isIntersecting){renderPage(i);if(S.tool==='edittext'&&!$('.tl',pg.el))addTextBoxes(i)}}},{root:$('#view'),rootMargin:'600px 0px'});
   longeIO=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)liberarPagina(+e.target.dataset.i)}},{root:$('#view'),rootMargin:'3000px 0px'});
   S.pages.forEach((pg,i)=>{
     const d=document.createElement('div');d.className='page';d.dataset.i=i;d.setAttribute('aria-label','Página '+(i+1));
@@ -1233,17 +1266,29 @@ function setTool(t){
   if(t==='stamp')openStamp();
 }
 $('#rail').addEventListener('click',e=>{const b=e.target.closest('.tool');if(b)setTool(b.dataset.tool)});
-// efeito "Dock" do Mac: com o mouse sobre a barra, o ícone mais perto cresce e os vizinhos crescem um pouco menos
-(()=>{
-  const rail=$('#rail'),ALCANCE=95;let quadro=0,ultimoY=null;
-  const desligado=()=>matchMedia('(max-width:700px), (prefers-reduced-motion: reduce)').matches;
-  const aplicar=()=>{quadro=0;if(ultimoY==null)return;
-    $$('.tool',rail).forEach(b=>{const r=b.getBoundingClientRect(),d=Math.abs(r.top+r.height/2-ultimoY);
-      const k=Math.max(0,1-d/ALCANCE);b.style.setProperty('--k',(k*k*(3-2*k)).toFixed(3))})}; // curva suave (smoothstep)
-  rail.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||desligado())return;
-    rail.classList.add('dock');ultimoY=e.clientY;if(!quadro)quadro=requestAnimationFrame(aplicar)});
-  rail.addEventListener('pointerleave',()=>{ultimoY=null;rail.classList.remove('dock');$$('.tool',rail).forEach(b=>b.style.setProperty('--k','0'))});
-})();
+// efeito "Dock" do Mac: com o mouse sobre uma barra ou menu, o item mais perto cresce e os vizinhos crescem um pouco menos.
+// Cada item ganha --k (0 a 1) e o CSS decide o que cresce. As posições "paradas" dos itens são medidas uma vez ao entrar
+// (como no Mac), então mover o mouse não força o navegador a recalcular o layout a cada quadro.
+// Liga/desliga em Configurações (localStorage editorpdf-dock = '0' desliga); nunca no celular nem com "reduzir movimento".
+const dockLigado=()=>{try{return localStorage.getItem('editorpdf-dock')!=='0'}catch(e){return true}};
+function efeitoDock(box,itemSel,eixo,alcance){
+  if(!box)return;let quadro=0,pos=null,centros=null,itens=[];
+  const parado=()=>!dockLigado()||matchMedia('(max-width:700px), (prefers-reduced-motion: reduce)').matches;
+  const zera=()=>{pos=null;centros=null;box.classList.remove('dock');itens.forEach(b=>b.style.removeProperty('--k'));itens=[]};
+  const aplicar=()=>{quadro=0;if(pos==null||!centros)return;
+    itens.forEach((b,j)=>{const k=Math.max(0,1-Math.abs(centros[j]-pos)/alcance),v=k*k*(3-2*k); // curva suave (smoothstep)
+      if(v)b.style.setProperty('--k',v.toFixed(3));else b.style.removeProperty('--k')})};
+  box.addEventListener('pointermove',e=>{
+    if(e.pointerType!=='mouse'||parado()){if(centros)zera();return}
+    if(!centros){itens=$$(itemSel,box).filter(b=>b.offsetParent);box.classList.add('dock');
+      centros=itens.map(b=>{const r=b.getBoundingClientRect();return eixo==='x'?r.left+r.width/2:r.top+r.height/2})}
+    pos=eixo==='x'?e.clientX:e.clientY;if(!quadro)quadro=requestAnimationFrame(aplicar)});
+  box.addEventListener('pointerleave',zera);
+  box.addEventListener('scroll',()=>{if(centros){centros=null;itens.forEach(b=>b.style.removeProperty('--k'))}},{passive:true}); // a barra rolou: mede de novo
+}
+efeitoDock($('#rail'),'.tool','y',95);
+efeitoDock($('.top'),'.btn,.brand','x',110);
+efeitoDock($('#exportMenu'),'button','y',70);
 function applyToolClass(){
   const creation=['text','highlight','underline','strike','draw','rect','ellipse','line','note','redact','image','sign','stamp'].includes(S.tool);
   $$('.layer').forEach(L=>{L.className='layer t-'+S.tool+(creation&&!['image','sign','stamp'].includes(S.tool)?' cross':'')});
@@ -1415,7 +1460,8 @@ async function getBlocks(i){
   return pg.blocksP;
 }
 async function addTextBoxes(i){
-  const pg=S.pages[i];if(!pg.el)return;const L=$('.layer',pg.el);
+  const pg=S.pages[i];if(!pg.el||!pg.perto)return; // página longe da tela: as caixas entram quando ela chegar perto
+  const L=$('.layer',pg.el);
   if(S.srv){
     const bl=await getBlocks(i);
     if(S.tool!=='edittext')return;
@@ -2005,6 +2051,8 @@ async function bake(bytes,objs){
     }
   }
   objs=objs.filter(o=>!handled.has(o));
+  // o servidor já gravou tudo (só trocas de texto e tarjas): abrir e regravar o PDF no pdf-lib levaria segundos à toa
+  if(!objs.length&&!Object.keys(S.form).length&&!S.flatten)return bytes;
   const doc=await PDFDocument.load(bytes,{ignoreEncryption:true});
   await fillForm(doc);
   const pages=doc.getPages(),fonts={};let bad=0;
@@ -2197,14 +2245,16 @@ function openPrint(){
   const f=$('#impFaixa',bg);f.addEventListener('focus',()=>{$('input[name=imp][value=faixa]',bg).checked=true});
   f.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('[data-ok]',bg).click()}});
 }
-async function imprimir(idx){
+// origem (opcional): {bytes, nome, paginas} de outro PDF (a mesa de vários PDFs imprime por aqui também)
+async function imprimir(idx,origem){
   if(S.busy)return;busy(true,'Preparando a impressão…');
   let area=$('#impressao');if(area)area.remove();
   try{
-    let bytes=dirty()?await bake(S.bytes,S.objs):S.bytes;
+    let bytes=origem?origem.bytes:dirty()?await bake(S.bytes,S.objs):S.bytes;
+    const total=origem?origem.paginas:S.pages.length,nome=origem?origem.nome:(S.name||'documento');
     if(window.AndroidApp&&AndroidApp.imprimir){ // celular: o Android imprime o próprio PDF (melhor qualidade)
-      if(idx.length<S.pages.length)bytes=await rebuild(bytes,idx.map(i=>({src:i})));
-      AndroidApp.imprimir((S.name||'documento')+'.pdf',bytesToB64(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes)));
+      if(idx.length<total)bytes=await rebuild(bytes,idx.map(i=>({src:i})));
+      AndroidApp.imprimir(nome+'.pdf',bytesToB64(bytes instanceof Uint8Array?bytes:new Uint8Array(bytes)));
       return;
     }
     // computador e iPhone: cada página vira uma imagem nítida (cerca de 200 dpi) e vai para a janela de impressão
@@ -2247,6 +2297,188 @@ function dialog({title,sub,body='',ok='OK',cancel='Cancelar',onOk}){
   bg.addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();close()}});
   $('[data-ok]',bg).onclick=()=>{const keep=onOk?onOk(bg):undefined;if(keep!==false)close()};
   const first=$('input:checked',bg)||$('[data-ok]',bg);first.focus();return bg;
+}
+
+/* ================= Mesa: vários PDFs ao mesmo tempo ================= */
+// Cada arquivo da mesa é uma lista de páginas {k, src, i, rot}: src = PDF de origem (em M.fontes), i = página nele,
+// rot = giro extra. Mover, girar, apagar e separar só mexem nessas listas; o PDF novo é montado (pdf-lib) ao juntar,
+// salvar ou imprimir. Funciona igual no Windows, no celular e no site (não usa o servidor).
+const M={arqs:[],fontes:{},sel:new Set(),seq:0,el:null,io:null};
+// Abre até 6 PDFs ao mesmo tempo (120 arquivos: de ~14 s para poucos segundos), mantendo a ordem escolhida.
+// PDFs com senha ficam para o fim e pedem a senha um de cada vez.
+async function mesaAdicionar(lista){
+  lista=[...lista];const n=lista.length,res=new Array(n),comSenha=[];let prox=0,feitos=0;
+  const abrir=async(f,bytes)=>{
+    const pdf=await pdfjsLib.getDocument({data:bytes.slice()}).promise,id='f'+(++M.seq);
+    const tam=await Promise.all(Array.from({length:pdf.numPages},(_,i)=>pdf.getPage(i+1).then(p=>{const v=p.getViewport({scale:1});return[v.width,v.height]})));
+    return{id,F:{bytes,pdf,tam,lib:null},arq:{k:'a'+M.seq,nome:f.name.replace(/\.pdf$/i,''),pags:tam.map((_,i)=>({k:uid(),src:id,i,rot:0}))}};
+  };
+  const um=async j=>{
+    const f=lista[j];
+    if(!(f.type==='application/pdf'||/\.pdf$/i.test(f.name))){toast(`“${f.name}” não é PDF.`,true);return}
+    try{
+      const bytes=f.pronto||new Uint8Array(await f.arrayBuffer()); // .pronto: PDF já em memória (o aberto no editor). Não usar .bytes: o File dos navegadores novos já tem esse método
+      if(await precisaSenha(bytes)){comSenha.push([j,bytes]);return}
+      res[j]=await abrir(f,bytes);
+    }catch(e){toast(`Não consegui abrir “${f.name}”: ${e.message||e}`,true)}
+  };
+  const trabalhador=async()=>{while(prox<n){const j=prox++;await um(j);feitos++;if(n>3)busy(true,`Abrindo os PDFs… ${feitos} de ${n}`)}};
+  await Promise.all(Array.from({length:Math.min(6,n)},trabalhador));
+  for(const[j,bytes]of comSenha){ // com senha: pede a senha, um por vez
+    try{const r=await desbloquearAoAbrir(bytes,lista[j].name);if(r.bytes)res[j]=await abrir(lista[j],r.bytes)}
+    catch(e){toast(`Não consegui abrir “${lista[j].name}”: ${e.message||e}`,true)}
+  }
+  res.forEach(r=>{if(r){M.fontes[r.id]=r.F;M.arqs.push(r.arq)}});
+  mesaDesenhar();
+}
+const mesaPag=k=>{for(const a of M.arqs){const j=a.pags.findIndex(p=>p.k===k);if(j>=0)return[a,j]}return[null,-1]};
+const mesaMarcadas=()=>M.arqs.flatMap(a=>a.pags.filter(p=>M.sel.has(p.k)));
+// monta um PDF com as páginas na ordem dada (copia de cada origem de uma vez só)
+async function mesaMontar(pags){
+  const out=await PDFDocument.create();
+  for(let a=0;a<pags.length;){
+    let b=a;while(b<pags.length&&pags[b].src===pags[a].src)b++;
+    const F=M.fontes[pags[a].src];F.lib=F.lib||await PDFDocument.load(F.bytes,{ignoreEncryption:true});
+    const cp=await out.copyPages(F.lib,pags.slice(a,b).map(p=>p.i));
+    cp.forEach((pg,j)=>{const r=pags[a+j].rot;if(r)pg.setRotation(degrees((pg.getRotation().angle+r)%360));out.addPage(pg)});a=b;
+  }
+  return new Uint8Array(await out.save());
+}
+function openMesa(){
+  if(M.el){M.el.hidden=false;return}
+  const bg=document.createElement('div');bg.className='modal-bg mesa-bg';
+  bg.innerHTML=`<div class="modal mesa" role="dialog" aria-modal="true" aria-labelledby="mesaT">
+    <div class="mesa-top"><div><h2 id="mesaT">Organizar vários PDFs</h2><p class="sub">Marque páginas com um clique. Arraste para mudar a ordem ou passar de um arquivo para outro.</p></div>
+      <div class="row"><button class="btn sm" id="mAdd">${ic('folder')}Adicionar PDFs…</button>${S.doc?`<button class="btn sm" id="mAberto">Incluir o PDF aberto</button>`:''}<button class="btn sm ghost" id="mFechar" aria-label="Fechar">✕</button></div></div>
+    <div class="mesa-sel" id="mSel" hidden><b id="mSelN"></b>
+      <button class="btn sm" data-m="girar">↻ Girar</button><button class="btn sm" data-m="separar" title="Leva as páginas marcadas para um arquivo novo">Separar em arquivo novo</button>
+      <select id="mMover" class="msel-mover" aria-label="Mover as páginas marcadas para"></select><button class="btn sm danger" data-m="apagar">${ic('trash')}Apagar</button><button class="btn sm ghost" data-m="limpar">Desmarcar</button></div>
+    <div class="mesa-corpo" id="mCorpo"></div>
+    <div class="foot"><button class="btn" id="mImp">${ic('print')}Imprimir…</button><button class="btn" id="mCada">Salvar cada arquivo</button><button class="btn primary" id="mJuntar">Juntar tudo em um PDF</button></div>
+  </div><input type="file" id="mIn" accept=".pdf,application/pdf" multiple hidden>`;
+  document.body.appendChild(bg);M.el=bg;
+  const fechar=()=>{if(M.arqs.length&&!confirm('Fechar a mesa? Os arquivos que você montou aqui e não salvou serão descartados.'))return;
+    bg.remove();M.el=null;if(M.io)M.io.disconnect();Object.values(M.fontes).forEach(F=>{try{F.pdf.destroy()}catch(e){}});M.arqs=[];M.fontes={};M.sel.clear()};
+  $('#mFechar',bg).onclick=fechar;bg.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('.modal-bg:not(.mesa-bg)')){e.stopPropagation();fechar()}});
+  $('#mAdd',bg).onclick=()=>$('#mIn',bg).click();
+  $('#mIn',bg).onchange=async e=>{const fs=[...e.target.files];e.target.value='';busy(true,'Abrindo os PDFs…');try{await mesaAdicionar(fs)}finally{busy(false)}};
+  const ab=$('#mAberto',bg);if(ab)ab.onclick=async()=>{ab.remove();busy(true);try{const by=dirty()?await bake(S.bytes,S.objs):S.bytes;await mesaAdicionar([{name:(S.name||'documento')+'.pdf',type:'application/pdf',pronto:new Uint8Array(by)}])}finally{busy(false)}};
+  // arrastar arquivos do Windows para dentro da mesa
+  bg.addEventListener('dragover',e=>{if(e.dataTransfer.types.includes('Files'))e.preventDefault()});
+  bg.addEventListener('drop',async e=>{const fs=[...(e.dataTransfer.files||[])];if(!fs.length)return;e.preventDefault();busy(true,'Abrindo os PDFs…');try{await mesaAdicionar(fs)}finally{busy(false)}});
+  // marcar páginas (clique marca/desmarca; Shift marca um intervalo no mesmo arquivo)
+  let ultima=null;
+  $('#mCorpo',bg).addEventListener('click',e=>{
+    const b=e.target.closest('[data-a]');if(b){mesaArquivo(b.dataset.a,b.dataset.acao);return}
+    const t=e.target.closest('.mp');if(!t)return;const k=t.dataset.k;
+    if(e.shiftKey&&ultima){const[a1,j1]=mesaPag(ultima),[a2,j2]=mesaPag(k);if(a1&&a1===a2){for(let j=Math.min(j1,j2);j<=Math.max(j1,j2);j++)M.sel.add(a1.pags[j].k);mesaDesenhar();return}}
+    M.sel.has(k)?M.sel.delete(k):M.sel.add(k);ultima=k;mesaDesenhar();
+  });
+  $('#mCorpo',bg).addEventListener('change',e=>{const n=e.target.closest('[data-nome]');if(n){const a=M.arqs.find(x=>x.k===n.dataset.nome);if(a)a.nome=n.value.trim()||a.nome}});
+  // arrastar páginas (as marcadas vão juntas)
+  let arrastando=null;
+  $('#mCorpo',bg).addEventListener('dragstart',e=>{const t=e.target.closest('.mp');if(!t)return;arrastando=M.sel.has(t.dataset.k)?[...M.sel]:[t.dataset.k];e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','mesa')});
+  $('#mCorpo',bg).addEventListener('dragover',e=>{if(arrastando){e.preventDefault();e.stopPropagation()}});
+  $('#mCorpo',bg).addEventListener('drop',e=>{
+    if(!arrastando)return;e.preventDefault();e.stopPropagation();
+    const alvo=e.target.closest('.mp'),pilha=e.target.closest('.marq');if(!pilha){arrastando=null;return}
+    const dest=M.arqs.find(a=>a.k===pilha.dataset.arq);const mov=mesaMarcadasPor(arrastando);arrastando=null;
+    if(alvo&&mov.some(p=>p.k===alvo.dataset.k))return;
+    mesaTirar(mov);let pos=dest.pags.length;if(alvo){const j=dest.pags.findIndex(p=>p.k===alvo.dataset.k);if(j>=0){const r=alvo.getBoundingClientRect();pos=e.clientX>r.left+r.width/2?j+1:j}}
+    dest.pags.splice(pos,0,...mov);mesaDesenhar();
+  });
+  $('#mCorpo',bg).addEventListener('dragend',()=>{arrastando=null});
+  // ações nas páginas marcadas
+  $('#mSel',bg).addEventListener('click',e=>{
+    const b=e.target.closest('[data-m]');if(!b)return;const m=mesaMarcadas();if(!m.length)return;
+    if(b.dataset.m==='girar')m.forEach(p=>p.rot=(p.rot+90)%360);
+    if(b.dataset.m==='apagar'){mesaTirar(m);M.sel.clear()}
+    if(b.dataset.m==='separar'){mesaTirar(m);M.arqs.push({k:'a'+(++M.seq),nome:'Novo arquivo '+M.seq,pags:m});M.sel.clear()}
+    if(b.dataset.m==='limpar')M.sel.clear();
+    mesaDesenhar();
+  });
+  $('#mMover',bg).onchange=e=>{const v=e.target.value;e.target.value='';const m=mesaMarcadas();if(!v||!m.length)return;
+    mesaTirar(m);if(v==='novo')M.arqs.push({k:'a'+(++M.seq),nome:'Novo arquivo '+M.seq,pags:m});else{const d=M.arqs.find(a=>a.k===v);if(d)d.pags.push(...m)}
+    M.sel.clear();mesaDesenhar()};
+  $('#mJuntar',bg).onclick=()=>mesaJuntar();$('#mCada',bg).onclick=()=>mesaSalvarCada();$('#mImp',bg).onclick=()=>mesaImprimir();
+  M.io=new IntersectionObserver(es=>{for(const e of es)if(e.isIntersecting){M.io.unobserve(e.target);mesaMiniatura(e.target)}},{root:$('#mCorpo',bg),rootMargin:'300px'});
+  mesaDesenhar();
+}
+const mesaMarcadasPor=ks=>{const s=new Set(ks);return M.arqs.flatMap(a=>a.pags.filter(p=>s.has(p.k)))};
+function mesaTirar(pags){const s=new Set(pags.map(p=>p.k));M.arqs.forEach(a=>a.pags=a.pags.filter(p=>!s.has(p.k)));M.arqs=M.arqs.filter(a=>a.pags.length)}
+function mesaArquivo(k,acao){
+  const j=M.arqs.findIndex(a=>a.k===k);if(j<0)return;
+  if(acao==='sobe'&&j>0)[M.arqs[j-1],M.arqs[j]]=[M.arqs[j],M.arqs[j-1]];
+  if(acao==='desce'&&j<M.arqs.length-1)[M.arqs[j+1],M.arqs[j]]=[M.arqs[j],M.arqs[j+1]];
+  if(acao==='tirar'){M.arqs[j].pags.forEach(p=>M.sel.delete(p.k));M.arqs.splice(j,1)}
+  if(acao==='todas'){const a=M.arqs[j],tudo=a.pags.every(p=>M.sel.has(p.k));a.pags.forEach(p=>tudo?M.sel.delete(p.k):M.sel.add(p.k))}
+  mesaDesenhar();
+}
+function mesaDesenhar(){
+  const bg=M.el;if(!bg)return;const corpo=$('#mCorpo',bg);
+  [...M.sel].forEach(k=>{if(!mesaPag(k)[0])M.sel.delete(k)});
+  const total=M.arqs.reduce((s,a)=>s+a.pags.length,0);
+  corpo.innerHTML=M.arqs.length?M.arqs.map((a,j)=>`<section class="marq" data-arq="${a.k}">
+      <div class="marq-top"><input data-nome="${a.k}" value="${esc(a.nome)}" aria-label="Nome do arquivo"><span class="muted">${a.pags.length} página${a.pags.length>1?'s':''}</span>
+        <span class="spacer"></span><button class="btn sm ghost" data-a="${a.k}" data-acao="todas">Marcar todas</button>
+        <button class="btn sm ghost" data-a="${a.k}" data-acao="sobe" ${j?'':'disabled'} aria-label="Subir">↑</button><button class="btn sm ghost" data-a="${a.k}" data-acao="desce" ${j<M.arqs.length-1?'':'disabled'} aria-label="Descer">↓</button>
+        <button class="btn sm ghost" data-a="${a.k}" data-acao="tirar" aria-label="Tirar da mesa">✕</button></div>
+      <div class="marq-pags">${a.pags.map((p,n)=>{const[w,h]=M.fontes[p.src].tam[p.i],deit=(p.rot%180)?w<h:w>h;
+        return `<div class="mp ${M.sel.has(p.k)?'on':''}" draggable="true" data-k="${p.k}" title="Página ${p.i+1} de “${esc(M.arqs.find(x=>x.pags.includes(p)).nome)}”"><canvas class="${deit?'deit':''}"></canvas><span>${n+1}</span></div>`}).join('')}</div></section>`).join('')
+    :`<div class="mesa-vazia">${ic('pages')}<b>Adicione os PDFs que quer juntar, separar ou organizar</b><span class="muted">Use “Adicionar PDFs…” ou arraste os arquivos para cá.</span></div>`;
+  $$('.mp',corpo).forEach(t=>M.io.observe(t));
+  const n=M.sel.size;$('#mSel',bg).hidden=!n;$('#mSelN',bg).textContent=`${n} página${n>1?'s':''} marcada${n>1?'s':''}`;
+  $('#mMover',bg).innerHTML='<option value="">Mover para…</option>'+M.arqs.map(a=>`<option value="${a.k}">${esc(a.nome)}</option>`).join('')+'<option value="novo">Um arquivo novo</option>';
+  $('#mJuntar',bg).disabled=$('#mCada',bg).disabled=$('#mImp',bg).disabled=!total;
+}
+async function mesaMiniatura(t){
+  const[a,j]=mesaPag(t.dataset.k);if(!a)return;const p=a.pags[j],F=M.fontes[p.src];
+  try{const pg=await F.pdf.getPage(p.i+1),v0=pg.getViewport({scale:1,rotation:(pg.rotate+p.rot)%360});
+    const vp=pg.getViewport({scale:(110*dpr)/Math.max(v0.width,v0.height),rotation:(pg.rotate+p.rot)%360});
+    const c=$('canvas',t);if(!c)return;c.width=Math.floor(vp.width);c.height=Math.floor(vp.height);
+    await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise}catch(e){}
+}
+async function mesaJuntar(){
+  const pags=M.arqs.flatMap(a=>a.pags);if(!pags.length)return;busy(true,'Juntando…');
+  try{const by=await mesaMontar(pags),nome=(M.arqs.length===1?M.arqs[0].nome:'juntado')+'.pdf';
+    dialog({title:'PDF pronto',sub:`${pags.length} página${pags.length>1?'s':''}, ${sizeTxtMesa(by.length)}.`,ok:'Salvar',cancel:'Abrir no editor',
+      onOk:()=>{download(by,nome)}});
+    const ab=$$('.modal [data-x]').pop();if(ab)ab.addEventListener('click',()=>{if(M.el){M.el.remove();M.el=null}M.arqs=[];M.fontes={};M.sel.clear();openFile(new File([by],nome,{type:'application/pdf'}))});
+  }catch(e){toast('Não foi possível juntar: '+(e.message||e),true)}finally{busy(false)}
+}
+async function mesaSalvarCada(){
+  if(!M.arqs.length)return;busy(true,'Montando os arquivos…');
+  try{const sai=[];for(const a of M.arqs)sai.push([a.nome.replace(/[\\/:*?"<>|]/g,'_')+'.pdf',await mesaMontar(a.pags)]);
+    if(sai.length===1)download(sai[0][1],sai[0][0]);else download(zipArquivos(sai),'pdfs-organizados.zip','application/zip');
+    toast(sai.length>1?`${sai.length} arquivos num .zip.`:'Arquivo pronto.');
+  }catch(e){toast('Não foi possível salvar: '+(e.message||e),true)}finally{busy(false)}
+}
+function mesaImprimir(){
+  const marc=mesaMarcadas(),tudo=M.arqs.flatMap(a=>a.pags);
+  dialog({title:'Imprimir',sub:'As páginas saem na ordem da mesa, uma atrás da outra. A impressora e as cópias você escolhe na próxima janela.',
+    body:`<label class="opt"><input type="radio" name="mimp" value="tudo" ${marc.length?'':'checked'}><span><b>Todos os arquivos</b><small>${tudo.length} página${tudo.length>1?'s':''}</small></span></label>
+      <label class="opt"><input type="radio" name="mimp" value="marc" ${marc.length?'checked':'disabled'}><span><b>Só as páginas marcadas</b><small>${marc.length?marc.length+' página'+(marc.length>1?'s':''):'marque páginas com um clique'}</small></span></label>`,
+    ok:'Imprimir',onOk:bg=>{const ps=$('input[name=mimp]:checked',bg).value==='marc'?marc:tudo;
+      (async()=>{busy(true,'Preparando a impressão…');let by;try{by=await mesaMontar(ps)}catch(e){busy(false);toast('Não foi possível montar: '+e.message,true);return}busy(false);
+        imprimir(ps.map((_,i)=>i),{bytes:by,nome:'impressao',paginas:ps.length})})()}});
+}
+const sizeTxtMesa=n=>n>1048576?(n/1048576).toFixed(1).replace('.',',')+' MB':Math.max(1,Math.round(n/1024))+' KB';
+// ZIP sem compressão (os PDFs já vêm comprimidos), para "Salvar cada arquivo" baixar tudo de uma vez
+function zipArquivos(lista){
+  const crcT=zipArquivos.t||(zipArquivos.t=Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;return c>>>0}));
+  const crc=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+  const enc=new TextEncoder(),partes=[],central=[];let pos=0;
+  for(const[nome,dados]of lista){
+    const n=enc.encode(nome),c=crc(dados),h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,c,true);h.setUint32(18,dados.length,true);h.setUint32(22,dados.length,true);h.setUint16(26,n.length,true);
+    const cd=new DataView(new ArrayBuffer(46));cd.setUint32(0,0x02014b50,true);cd.setUint16(4,20,true);cd.setUint16(6,20,true);cd.setUint16(8,0x0800,true);
+    cd.setUint32(16,c,true);cd.setUint32(20,dados.length,true);cd.setUint32(24,dados.length,true);cd.setUint16(28,n.length,true);cd.setUint32(42,pos,true);
+    partes.push(new Uint8Array(h.buffer),n,dados);central.push(new Uint8Array(cd.buffer),n);pos+=30+n.length+dados.length;
+  }
+  const tamC=central.reduce((s,x)=>s+x.length,0),fim=new DataView(new ArrayBuffer(22));
+  fim.setUint32(0,0x06054b50,true);fim.setUint16(8,lista.length,true);fim.setUint16(10,lista.length,true);fim.setUint32(12,tamC,true);fim.setUint32(16,pos,true);
+  const tudo=[...partes,...central,new Uint8Array(fim.buffer)],out=new Uint8Array(tudo.reduce((s,x)=>s+x.length,0));let o=0;for(const x of tudo){out.set(x,o);o+=x.length}
+  return out;
 }
 
 /* ================= OCR (reconhecer texto) ================= */
@@ -2336,6 +2568,26 @@ if(matchMedia('(max-width:700px)').matches){$('#mainGrid').classList.add('no-pro
 $('#bProps').onclick=()=>{const off=$('#mainGrid').classList.toggle('no-props');$('#bProps').setAttribute('aria-pressed',String(!off));refitSoon()};
 function setTheme(t){document.documentElement.dataset.theme=t;$('#bTheme use').setAttribute('href',t==='dark'?'#i-sun':'#i-moon');try{localStorage.setItem('editorpdf-tema',t)}catch(e){}}
 $('#bTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+// Configurações: preferências deste aparelho (ficam no localStorage)
+$('#bConfig').onclick=()=>{
+  const escuro=document.documentElement.dataset.theme==='dark';
+  dialog({title:'Configurações',sub:'Valem só para este aparelho.',ok:'Fechar',cancel:'',
+    body:`<label class="chk cfg"><input type="checkbox" id="cfgDock" ${dockLigado()?'checked':''}><span><b>Ampliar ao passar o mouse</b><small>Os ícones das barras e dos menus crescem perto do mouse, como na Dock do Mac.</small></span></label>
+      <label class="chk cfg"><input type="checkbox" id="cfgEscuro" ${escuro?'checked':''}><span><b>Tema escuro</b><small>Também dá para trocar pelo botão da lua.</small></span></label>`});
+  $('#cfgDock').onchange=e=>{try{localStorage.setItem('editorpdf-dock',e.target.checked?'1':'0')}catch(_){}toast(e.target.checked?'Efeito ligado.':'Efeito desligado.')};
+  $('#cfgEscuro').onchange=e=>setTheme(e.target.checked?'dark':'light');
+  // app do Windows (instalador): abrir junto com o Windows, escondido, para abrir na hora
+  const api=window.pywebview&&pywebview.api;
+  if(api&&api.inicio)api.inicio().then(r=>{
+    if(!r||!r.disponivel)return;const box=document.createElement('div');
+    const pintar=lig=>{box.innerHTML=`<label class="chk cfg"><input type="checkbox" id="cfgInicio" ${lig?'checked':''}><span><b>Abrir junto com o Windows</b><small>O app fica pronto em segundo plano e abre na hora. Usa cerca de 300 MB de memória enquanto o computador estiver ligado. Fechar a janela só esconde o app.</small></span></label>
+      ${lig?'<button class="btn sm" id="cfgSair" style="margin:-4px 0 12px 26px">Fechar o app de vez agora</button>':''}`;
+      $('#cfgInicio',box).onchange=async e=>{const x=await api.inicio(e.target.checked);if(x&&x.erro)toast('Não foi possível mudar: '+x.erro,true);
+        else toast(x.ligado?'Pronto: a partir da próxima vez que você entrar no Windows, o app abre na hora.':'Desligado: fechar a janela volta a encerrar o app.');pintar(!!(x&&x.ligado))};
+      const s=$('#cfgSair',box);if(s)s.onclick=()=>{if(confirm('Fechar o Editor de PDF agora? As alterações que você não salvou serão perdidas.'))api.sair()}};
+    pintar(!!r.ligado);const ult=$$('.modal .chk.cfg').pop();if(ult)ult.after(box);
+  }).catch(()=>{});
+};
 (()=>{let t=null;try{t=localStorage.getItem('editorpdf-tema')}catch(e){}if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';setTheme(t)})();
 $('#bSave').onclick=save;$('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
 $('#zIn').onclick=()=>setScale(S.scale*1.2);$('#zOut').onclick=()=>setScale(S.scale/1.2);$('#zFit').onclick=()=>{fitWidth();};
@@ -2347,6 +2599,8 @@ window.addEventListener('resize',()=>{if(S.fit&&S.doc){fitWidth();setScale(S.sca
 document.addEventListener('keydown',e=>{
   const typing=/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||e.target.isContentEditable;
   const mod=e.ctrlKey||e.metaKey;
+  // mesa de vários PDFs aberta: as teclas são dela (Delete apaga as páginas marcadas), não do documento por trás
+  if(M.el){if(!typing&&(e.key==='Delete'||e.key==='Backspace')&&M.sel.size&&!$('.modal-bg:not(.mesa-bg)')){e.preventDefault();$('[data-m=apagar]',M.el).click()}return}
   if(mod&&e.key.toLowerCase()==='s'){e.preventDefault();save();return}
   if(mod&&e.key.toLowerCase()==='f'&&S.doc){e.preventDefault();openFind();return}
   if(mod&&e.key.toLowerCase()==='p'){e.preventDefault();openPrint();return}
@@ -2366,6 +2620,7 @@ let keydebounce=null;
 const CATS=[['organizar','Organizar PDF'],['otimizar','Otimizar'],['edseg','Editar e segurança'],['paraPdf','Converter para PDF'],['dePdf','Converter de PDF']];
 const PGS={t:'text',l:'Páginas (vazio = todas)',ph:'ex.: 1-3, 5, 8-'};
 const TOOLS2=[
+ {id:'mesa',cat:'organizar',nome:'Organizar vários PDFs',desc:'Junte, separe, reordene e imprima páginas de vários PDFs ao mesmo tempo.',icone:'pages',cor:'c6',especial:true,opts:[]},
  {id:'juntar',cat:'organizar',nome:'Juntar PDF',desc:'Una vários PDFs em um só, na ordem que quiser.',icone:'merge',cor:'c3',acc:'.pdf',multi:true,ordem:true,min:2,run:'Juntar',opts:[]},
  {id:'dividir',cat:'organizar',nome:'Dividir PDF',desc:'Separe um PDF por intervalos, a cada N páginas ou página a página.',icone:'split',cor:'c4',acc:'.pdf',multi:true,min:1,run:'Dividir',opts:[
    {id:'modo',t:'select',l:'Como dividir',def:'intervalos',o:[['intervalos','Por intervalos de páginas'],['cada','A cada N páginas'],['paginas','Uma página por arquivo']]},
@@ -2469,6 +2724,7 @@ CATS.push(['imagens','Imagens']);
 const nrm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 const SO_COMPUTADOR=['pdf2word','pdf2xlsx','pdf2pptx','office2pdf','html2pdf','pdfa','assinar'];
 function toolOk(t){
+  if(t.especial)return true; // a mesa roda no próprio editor, sem servidor
   if(!S.srv)return false;
   if(S.motorLocal&&SO_COMPUTADOR.includes(t.id))return false;
   if(t.id==='ocr')return !!S.ocr;
@@ -2505,6 +2761,7 @@ document.addEventListener('click',e=>{
   const t=TOOLS2.find(x=>x.id===c.dataset.tool);if(!t)return;
   if(!toolOk(t)){toast(toolWhy(t),true);return}
   $$('.modal-bg.gallery').forEach(m=>m.remove());
+  if(t.id==='mesa'){openMesa();return}
   openTool(t.id);
 });
 $('#bTools').onclick=()=>{
