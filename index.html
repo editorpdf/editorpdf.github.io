@@ -229,7 +229,13 @@ svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .o .h{position:absolute;right:-6px;bottom:-6px;width:12px;height:12px;border-radius:50%;background:#3b5bfd;border:2px solid #fff;cursor:nwse-resize;display:none}
 .o.sel .h{display:block}
 .o.text,.o.rep{white-space:pre;cursor:move;line-height:1.2;min-width:6px;min-height:1em}
-.o.text[contenteditable=true],.o.rep[contenteditable=true]{cursor:text;outline:1.5px solid #3b5bfd;outline-offset:1px;background:rgba(59,91,253,.07)}
+.o.text[contenteditable=true]{cursor:text;outline:1.5px solid #3b5bfd;outline-offset:1px;background:rgba(59,91,253,.07)}
+/* texto do PDF que está sendo trocado: parece o próprio texto da página, com cursor de digitação e, no máximo,
+   um contorno leve enquanto edita (não é uma caixa para arrastar) */
+.o.rep{cursor:text}
+.o.rep.sel{outline:none}
+.o.rep:hover{outline:1px dashed rgba(59,91,253,.45);outline-offset:2px}
+.o.rep[contenteditable=true]{outline:1px dashed rgba(59,91,253,.6)!important;outline-offset:2px;caret-color:#3b5bfd}
 .o.img{cursor:move}
 .o.img img{width:100%;height:100%;display:block;pointer-events:none;user-select:none}
 .o.hl{mix-blend-mode:multiply;cursor:move}
@@ -1033,6 +1039,41 @@ function fitWidth(silent){
   $('#zVal').textContent=Math.round(S.scale*100)+'%';
   if(!silent)setScale(S.scale,true);
 }
+// muda o zoom mantendo parado o ponto da página que está em (cx, cy) na tela (pinça e Ctrl+rodinha)
+function zoomNoPonto(novo,cx,cy){
+  const v=$('#view'),alvo=document.elementFromPoint(cx,cy),pgEl=alvo&&alvo.closest('.page');
+  let fx=null,fy=null;if(pgEl){const r=pgEl.getBoundingClientRect();fx=(cx-r.left)/r.width;fy=(cy-r.top)/r.height}
+  setScale(novo);
+  if(pgEl){const r=pgEl.getBoundingClientRect();v.scrollLeft+=r.left+fx*r.width-cx;v.scrollTop+=r.top+fy*r.height-cy}
+}
+// zoom com pinça (dois dedos) no celular e no iPhone. Durante o gesto a imagem só é ampliada (transform, rápido);
+// ao soltar, as páginas são redesenhadas nítidas no novo tamanho. O resto da tela (barras, botões) não muda de tamanho.
+// Usa eventos de toque (touchstart/touchmove): ao contrário dos de ponteiro, o navegador não os cancela quando o
+// primeiro dedo começa a rolar a página.
+(()=>{
+  const v=$('#view');let g=null;
+  const meio=t=>({x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2,d:Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)});
+  v.addEventListener('touchstart',e=>{
+    if(e.touches.length!==2||!S.doc)return;
+    const m=meio(e.touches),pages=$('#pages'),vr=v.getBoundingClientRect();
+    g={m0:m,m,s0:S.scale,k:1};
+    pages.style.transformOrigin=`${v.scrollLeft+m.x-vr.left-pages.offsetLeft}px ${v.scrollTop+m.y-vr.top-pages.offsetTop}px`;
+    pages.style.willChange='transform';
+  },{passive:true});
+  v.addEventListener('touchmove',e=>{
+    if(!g||e.touches.length<2)return;e.preventDefault(); // dois dedos: o gesto é nosso (a página não rola junto)
+    const m=meio(e.touches);g.k=Math.max(.25/g.s0,Math.min(4/g.s0,m.d/g.m0.d));g.m=m;
+    $('#pages').style.transform=`translate(${m.x-g.m0.x}px,${m.y-g.m0.y}px) scale(${g.k})`;
+  },{passive:false});
+  const solta=e=>{
+    if(!g||e.touches.length>=2)return;
+    const fim=g;g=null;const pages=$('#pages');pages.style.transform='';pages.style.willChange='';
+    if(Math.abs(fim.k-1)>.02)zoomNoPonto(fim.s0*fim.k,fim.m.x,fim.m.y);
+  };
+  v.addEventListener('touchend',solta);v.addEventListener('touchcancel',solta);
+  // computador: pinça do touchpad (chega como Ctrl+rodinha) e Ctrl+rodinha do mouse
+  v.addEventListener('wheel',e=>{if(!e.ctrlKey||!S.doc)return;e.preventDefault();zoomNoPonto(S.scale*Math.exp(-e.deltaY*.0025),e.clientX,e.clientY)},{passive:false});
+})();
 function pageAt(i){return S.pages[i]}
 function scrollToPage(i){const pg=S.pages[i];if(pg&&pg.el)pg.el.scrollIntoView({block:'start'})}
 // página atual = a que está no topo da tela; busca binária pela posição (rápido mesmo com centenas de páginas)
@@ -1228,7 +1269,7 @@ function makeEl(o){
     case'text':e.className+=' text';e.style.cssText=pos+fontStyle(o);e.textContent=o.text;break;
     case'rep':e.className='o rep'+(marcado(o)?' sel':'');
       e.style.cssText=o.server
-        ?`left:${o.x}px;top:${o.y}px;width:${o.w}px;min-height:${o.h}px;white-space:pre-wrap;line-height:${(o.lineh||1.2)*o.fs}px;text-align:${o.align||'left'};background:${o.bg};${fontStyle(o)}`
+        ?`left:${o.x}px;top:${o.y}px;${o.multi?`width:${o.w}px;white-space:pre-wrap`:`min-width:${o.w}px;white-space:pre`};min-height:${o.h}px;line-height:${(o.lineh||1.2)*o.fs}px;text-align:${o.align||'left'};background:${o.bg};${fontStyle(o)}`
         :`left:${o.x}px;top:${o.y}px;min-width:${o.w}px;height:${o.h}px;background:${o.bg};${fontStyle(o)};padding-left:${o.padL||0}px;line-height:${o.h}px`;
       e.textContent=o.text;break;
     case'redact':e.style.cssText=pos+`width:${o.w}px;height:${o.h}px;background:${o.fill||'#000'}`;e.innerHTML='<span class="h"></span>';e.title='Tarja: remove o conteúdo por baixo';break;
@@ -1303,6 +1344,11 @@ function bindLayer(i){
     if(e.target.closest('[contenteditable=true]'))return;
     if(targetEl&&!['highlight','underline','strike','draw','rect','ellipse','line','note','text','redact'].includes(t)||targetEl&&t==='select'){
       const o=objById(targetEl.dataset.id);if(!o)return;
+      // texto trocado é texto do PDF, não um objeto: clicar põe o cursor ali para continuar escrevendo (não arrasta)
+      if(o.type==='rep'){
+        const ponto={x:e.clientX,y:e.clientY};if(S.sel!==o.id)select(o.id);
+        e.preventDefault();setTimeout(()=>editText(o.id,false,ponto));return;
+      }
       if(t==='select'&&(e.shiftKey||e.ctrlKey||e.metaKey)){ // Shift/Ctrl+clique: junta ou tira da seleção
         const atual=selecionados().filter(x=>x.page===o.page).map(x=>x.id);
         const novo=atual.includes(o.id)?atual.filter(x=>x!==o.id):[...atual,o.id];
@@ -1373,7 +1419,7 @@ function bindLayer(i){
     if(!drag)return;const d=drag;drag=null;const o=d.o;
     if(d.mode==='marquee'){
       d.el.remove();const r=d.r;if(!r||r[2]<3||r[3]<3)return;
-      const dentro=$$('.o',L).filter(el=>{const x0=el.offsetLeft,y0=el.offsetTop,x1=x0+el.offsetWidth,y1=y0+el.offsetHeight;
+      const dentro=$$('.o:not(.rep)',L).filter(el=>{const x0=el.offsetLeft,y0=el.offsetTop,x1=x0+el.offsetWidth,y1=y0+el.offsetHeight;
         return x1>r[0]&&x0<r[0]+r[2]&&y1>r[1]&&y0<r[1]+r[3]}).map(el=>el.dataset.id);
       if(!dentro.length)return;
       S.multi=dentro;S.sel=dentro[dentro.length-1];renderLayer(i);renderProps();
@@ -1392,16 +1438,20 @@ function bindLayer(i){
   L.addEventListener('dblclick',e=>{const el=e.target.closest('.o.text,.o.rep');if(el)editText(el.dataset.id)});
   L.addEventListener('click',e=>{
     const tl=e.target.closest('.tl');
-    if(tl&&S.tool==='edittext'){tl.dataset.b!=null?startReplaceBlock(i,+tl.dataset.b):startReplace(i,+tl.dataset.k)}
+    if(tl&&S.tool==='edittext'){const ponto={x:e.clientX,y:e.clientY};tl.dataset.b!=null?startReplaceBlock(i,+tl.dataset.b,ponto):startReplace(i,+tl.dataset.k,ponto)}
   });
 }
-function editText(id,isNew){
+// ponto (opcional): onde o usuário clicou. O cursor vai para a letra clicada, como num editor de texto,
+// em vez de selecionar o trecho inteiro (que fazia parecer uma caixa a ser arrastada)
+function editText(id,isNew,ponto){
   const o=objById(id);if(!o)return;
   S.sel=id;renderLayer(o.page);
   const el=$(`.o[data-id="${id}"]`,S.pages[o.page].el);if(!el)return;
   el.contentEditable='true';el.spellcheck=false;el.focus();
-  const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);
-  if(isNew){sel.collapseToEnd()}
+  const sel=getSelection();sel.removeAllRanges();
+  const noPonto=ponto&&document.caretRangeFromPoint?document.caretRangeFromPoint(ponto.x,ponto.y):null;
+  if(noPonto&&el.contains(noPonto.startContainer)){noPonto.collapse(true);sel.addRange(noPonto)}
+  else{const r=document.createRange();r.selectNodeContents(el);sel.addRange(r);if(isNew||o.type==='rep')sel.collapseToEnd()}
   let done=false,cancelFlag=false;
   const drop=()=>{S.objs=S.objs.filter(x=>x.id!==id);S.sel=null;renderLayer(o.page);renderProps()};
   const finish=cancel=>{
@@ -1523,7 +1573,7 @@ function samplePage(i,x,y,w,h){
     for(let q=0;q<d.length;q+=4){if(d[q+3]<128)continue;const l=.2126*d[q]+.7152*d[q+1]+.0722*d[q+2];const diff=Math.abs(l-bl);if(diff>dl){dl=diff;dark=[d[q],d[q+1],d[q+2]]}}}catch(e){}
   return{bg:rgb2hex(...best),fg:dark&&dl>60?rgb2hex(...dark):(bl>128?'#000000':'#ffffff')};
 }
-async function startReplaceBlock(i,k){
+async function startReplaceBlock(i,k,ponto){
   const b=(await getBlocks(i)||[])[k];if(!b)return;
   try{await Promise.race([Promise.all([renderPage(i),S.pages[i].task&&S.pages[i].task.promise]),new Promise(r=>setTimeout(r,1500))])}catch(e){}
   const [x0,y0,x1,y1]=b.bbox,col=samplePage(i,x0,y0,x1-x0,y1-y0);
@@ -1533,9 +1583,9 @@ async function startReplaceBlock(i,k){
     src:{bbox:b.bbox,origin:b.origin,font:b.font,ocr:!!b.ocr,bg:b.bg||null}};
   S.objs.push(o);S.sel=o.id;renderLayer(i);
   if(b.mixed)toast('Este trecho mistura estilos (fontes, tamanhos ou cores). O texto novo usará um estilo só.');
-  editText(o.id,false);
+  editText(o.id,false,ponto);
 }
-async function startReplace(i,k){
+async function startReplace(i,k,ponto){
   const ln=(S.pages[i].lines||[])[k];if(!ln)return;
   try{await Promise.race([Promise.all([renderPage(i),S.pages[i].task&&S.pages[i].task.promise]),new Promise(r=>setTimeout(r,1500))])}catch(e){} // espera o desenho da página (no máx. 1,5 s) antes de amostrar as cores
   const fnt=fontFromName(ln.name||ln.gen);
@@ -1544,7 +1594,7 @@ async function startReplace(i,k){
   const o={id:uid(),page:i,type:'rep',lineKey:i+':'+k,x:ln.x-1,y:top,w:ln.w+2,h,padL:1,tx:ln.x,base:ln.base,text:ln.str,orig:ln.str,fs:ln.fs,font:fnt.font,bold:fnt.bold,italic:fnt.italic,color:col.fg,bg:col.bg};
   S.objs.push(o);S.sel=o.id;renderLayer(i);
   if(!S.warned){S.warned=true;toast('Modo básico: o texto antigo continua dentro do arquivo, só fica coberto. Para apagar de verdade, abra pelo "Abrir editor.bat".')}
-  editText(o.id,false);
+  editText(o.id,false,ponto);
 }
 
 /* ---- Imagem ---- */
@@ -2609,7 +2659,7 @@ document.addEventListener('keydown',e=>{
   if(mod&&e.key.toLowerCase()==='y'){e.preventDefault();redo();return}
   if(e.key==='Delete'||e.key==='Backspace'){if(S.sel){e.preventDefault();removeSel()}return}
   if(e.key==='Escape'){if(S.sel){select(null)}else setTool('select');return}
-  const grupo=selecionados();
+  const grupo=selecionados().filter(o=>o.type!=='rep'); // setas não movem texto trocado
   if(grupo.length&&e.key.startsWith('Arrow')){e.preventDefault();const st=e.shiftKey?10:1;const dx=e.key==='ArrowLeft'?-st:e.key==='ArrowRight'?st:0,dy=e.key==='ArrowUp'?-st:e.key==='ArrowDown'?st:0;
     grupo.forEach(o=>moverObj(o,dx,dy));new Set(grupo.map(o=>o.page)).forEach(renderLayer);clearTimeout(keydebounce);keydebounce=setTimeout(pushHist,400);
   }

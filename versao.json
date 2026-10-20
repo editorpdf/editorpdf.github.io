@@ -1,20 +1,18 @@
 {
     "windows":  {
-                    "versao":  "2.4",
+                    "versao":  "2.4.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Instalar-Editor-de-PDF.exe",
                     "novidades":  [
-                                      "Organizar vários PDFs: junte, separe, reordene e imprima páginas de vários arquivos ao mesmo tempo (Ferramentas)",
-                                      "Muito mais rápido em PDFs grandes: salvar uma troca de texto num PDF de 300 páginas caiu de 5,5 s para 0,2 s, e o app usa bem menos memória",
-                                      "Novo: Configurações (engrenagem). Dá para ligar ou desligar o efeito de ampliar ao passar o mouse, que agora vale também na barra de cima e nos menus",
-                                      "Novo: Abrir junto com o Windows (Configurações): o app fica pronto em segundo plano e abre na hora"
+                                      "Editar texto ficou mais natural: o cursor vai para a letra clicada e o texto não se arrasta como se fosse uma caixa",
+                                      "Zoom com a pinça do touchpad ou Ctrl + rodinha do mouse, no ponto onde está o mouse"
                                   ]
                 },
     "android":  {
-                    "versao":  "2.4",
+                    "versao":  "2.4.1",
                     "url":  "https://github.com/editorpdf/editorpdf.github.io/releases/latest/download/Editor-de-PDF.apk",
                     "novidades":  [
-                                      "Organizar vários PDFs: junte, separe, reordene e imprima páginas de vários arquivos ao mesmo tempo (Ferramentas)",
-                                      "Mais rápido em PDFs grandes ao editar texto"
+                                      "Zoom com dois dedos (pinça) no PDF",
+                                      "Editar texto ficou mais natural: o cursor vai para a letra tocada"
                                   ]
                 }
 }
