@@ -1181,13 +1181,13 @@ html.vidro[data-theme="light"]{--v-solido:rgba(250,252,255,.97)}
   html.vidro[data-theme="light"] input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),html.vidro[data-theme="light"] select,html.vidro[data-theme="light"] textarea{background:rgba(255,255,255,.7)}
 }
 /* anel de status em volta da Dynamic Island: verde pulsando devagar = tudo certo; vermelho = houve erro */
-html{--saude-cor:#34c759;--saude-brilho:rgba(52,199,89,.85)}
+html{--saude-cor:#30e060;--saude-brilho:rgba(48,224,96,.95)}
 html[data-saude="erro"]{--saude-cor:#ff3b30;--saude-brilho:rgba(255,59,48,.95)}
 #ilhaStatus{position:fixed;left:0;top:0;z-index:312;pointer-events:none;overflow:visible}
-#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:2.6;stroke-linejoin:round;filter:drop-shadow(0 0 4px var(--saude-brilho));animation:saudePulsa 3.8s ease-in-out infinite}
-html[data-saude="erro"] #ilhaStatus path{stroke-width:3.2;animation:saudePulsaErro 1s ease-in-out infinite}
-@keyframes saudePulsa{0%,100%{opacity:.3}50%{opacity:1}}
-@keyframes saudePulsaErro{0%,100%{opacity:.55}50%{opacity:1}}
+#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:3.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--saude-brilho)) drop-shadow(0 0 9px var(--saude-brilho));animation:saudePulsa 3.8s ease-in-out infinite}
+html[data-saude="erro"] #ilhaStatus path{stroke-width:4;animation:saudePulsaErro 1s ease-in-out infinite}
+@keyframes saudePulsa{0%,100%{opacity:.65}50%{opacity:1}}
+@keyframes saudePulsaErro{0%,100%{opacity:.7}50%{opacity:1}}
 html.sem-mov #ilhaStatus path{animation:none;opacity:.95}
 @media(prefers-reduced-motion:reduce){#ilhaStatus path{animation:none;opacity:.95}}
 @media(min-width:701px){#ilhaStatus,#ilhaToque{display:none}}
