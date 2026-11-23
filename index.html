@@ -981,28 +981,18 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .app:has(.main.is-home){grid-template-rows:calc(52px + var(--sat)) auto minmax(0,1fr) 0}
   .app:has(.main.is-home) .status{display:none}
 }
-/* celular: contorno azul que gira pela borda da tela (não pega cliques; fica parado com "reduzir movimento" ou sem-mov) */
-@property --giro{syntax:'<angle>';initial-value:0deg;inherits:false}
-@keyframes giroBorda{to{--giro:360deg}}
+/* celular: luz azul que circula a tela, desce até a Dynamic Island, se divide, dá a volta nela e sobe de novo (SVG montado em aplicarVisualCelular) */
+#luzBorda{display:none}
 @media(max-width:700px){
-  body::after{content:"";position:fixed;inset:0;z-index:310;pointer-events:none;border-radius:46px;padding:3px;
-    background:conic-gradient(from var(--giro),transparent 0 50%,#1565ff 66%,#4fb4ff 80%,#7fd0ff 88%,#1565ff 96%,transparent 100%);
-    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
-    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask-composite:exclude;
-    filter:drop-shadow(0 0 5px rgba(60,150,255,.85)) drop-shadow(0 0 12px rgba(40,110,255,.45));
-    animation:giroBorda 5.5s linear infinite}
-  html.sem-mov body::after{animation:none}
-  /* raio do canto da tela por modelo (iPhone XS em diante); sem entalhe (iPhone SE, 8) o canto é quase reto */
-  body::after{--raio:8px}
-  html.tem-entalhe body::after{--raio:47px;border-radius:var(--raio)}
-  @media(width:375px) and (height:812px){html.tem-entalhe body::after{--raio:39px}}   /* X, XS, 11 Pro, 12/13 mini */
-  @media(width:414px){html.tem-entalhe body::after{--raio:41px}}                      /* XR, 11, XS Max, 11 Pro Max */
-  @media(width:390px){html.tem-entalhe body::after{--raio:47px}}                      /* 12, 13, 14, 16e */
-  @media(width:428px){html.tem-entalhe body::after{--raio:53px}}                      /* 12/13 Pro Max, 14 Plus */
-  @media(width:393px),(width:430px){html.tem-entalhe body::after{--raio:55px}}        /* 14 Pro, 15, 15 Plus, 15 Pro Max */
-  @media(width:402px),(width:440px){html.tem-entalhe body::after{--raio:62px}}        /* 16 Pro, 16 Pro Max, 17 */
-  body::after{border-radius:var(--raio)}
+  #luzBorda{display:block;position:fixed;left:0;top:0;z-index:310;pointer-events:none;overflow:visible;filter:drop-shadow(0 0 4px rgba(60,150,255,.9)) drop-shadow(0 0 10px rgba(40,110,255,.45))}
+  #luzBorda path{fill:none;stroke-linecap:butt;stroke-linejoin:round}
+  #luzBorda .trilho{stroke:rgba(80,150,255,.16);stroke-width:3}
+  #luzBorda.parado .trilho{stroke:rgba(80,150,255,.7)}
+  #luzBorda .cauda{stroke:#2f7bff;stroke-width:3;opacity:.45}
+  #luzBorda .cabeca{stroke:#bfe6ff;stroke-width:3.4}
 }
+.cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
+@media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
 @media(max-width:700px) and (prefers-reduced-motion:reduce){body::after{animation:none}}
 
 /* cartão flutuante de opções (no lugar do painel lateral) */
@@ -3483,7 +3473,15 @@ $('#bConfig').onclick=()=>{
   dialog({title:'Configurações',sub:'Valem só para este aparelho.',ok:'Fechar',cancel:'',
     body:`<label class="chk cfg"><input type="checkbox" id="cfgDock" ${dockLigado()?'checked':''}><span><b>Ampliar ao passar o mouse</b><small>Os ícones das barras e dos menus crescem perto do mouse, como na Dock do Mac.</small></span></label>
       <label class="chk cfg"><input type="checkbox" id="cfgGuias" ${guiasLigado()?'checked':''}><span><b>Abrir cada PDF em uma guia</b><small>Vários PDFs no mesmo app, com guias no alto, como no Acrobat. Desligado: o PDF novo substitui o que está aberto.</small></span></label>
-      <label class="chk cfg"><input type="checkbox" id="cfgEscuro" ${escuro?'checked':''}><span><b>Tema escuro</b><small>Também dá para trocar pelo botão da lua.</small></span></label>`});
+      <label class="chk cfg"><input type="checkbox" id="cfgEscuro" ${escuro?'checked':''}><span><b>Tema escuro</b><small>Também dá para trocar pelo botão da lua.</small></span></label>
+      ${matchMedia('(max-width:700px)').matches?`<div id="cfgCel"><label class="chk cfg"><input type="checkbox" id="cfgBorda" ${celPref().borda?'checked':''}><span><b>Luz azul circulando a tela</b><small>Um brilho azul percorre a borda do celular, no sentido horário.</small></span></label>
+      <label class="chk cfg"><input type="checkbox" id="cfgIlha" ${celPref().ilha?'checked':''}><span><b>Luz na Dynamic Island</b><small>No meio do topo, a luz desce até a ilha, se divide, dá uma volta nela e sobe de novo. Só em iPhones com Dynamic Island (14 Pro em diante).</small></span></label>
+      <label class="cfg-sel"><b>Modelo do iPhone</b><select id="cfgModelo">${MODELOS_CEL.map(m=>`<option value="${m.id}" ${celPref().modelo===m.id?'selected':''}>${m.nome}</option>`).join('')}</select><small style="color:var(--muted)">Ajusta o canto do contorno e a posição do anel. Se algo parecer fora do lugar, escolha o seu modelo aqui.</small></label></div>`:''}`});
+  if($('#cfgCel')){
+    $('#cfgBorda').onchange=e=>{const p=celPref();p.borda=e.target.checked;celSalvar(p);aplicarVisualCelular()};
+    $('#cfgIlha').onchange=e=>{const p=celPref();p.ilha=e.target.checked;celSalvar(p);aplicarVisualCelular()};
+    $('#cfgModelo').onchange=e=>{const p=celPref();p.modelo=e.target.value;celSalvar(p);aplicarVisualCelular()};
+  }
   $('#cfgDock').onchange=e=>{try{localStorage.setItem('editorpdf-dock',e.target.checked?'1':'0')}catch(_){}toast(e.target.checked?'Efeito ligado.':'Efeito desligado.')};
   $('#cfgGuias').onchange=e=>{try{localStorage.setItem('editorpdf-guias',e.target.checked?'1':'0')}catch(_){}renderGuias();toast(e.target.checked?'Os próximos PDFs abrem em guias.':'Os próximos PDFs substituem o que está aberto.')};
   $('#cfgEscuro').onchange=e=>setTheme(e.target.checked?'dark':'light');
@@ -4436,8 +4434,80 @@ async function verAtualizacao(){
   });
 }
 setTimeout(verAtualizacao,6000);
-// celulares com entalhe/Dynamic Island (área segura no topo): liga o raio de canto do contorno azul que gira na borda
-(()=>{try{const p=document.createElement('div');p.style.cssText='position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.appendChild(p);const v=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove();if(v>20)document.documentElement.classList.add('tem-entalhe')}catch(e){}})();
+// ---- visual do celular: contorno azul na borda da tela e anel na Dynamic Island (Configurações escolhe o modelo) ----
+const MODELOS_CEL=[
+  {id:'auto',nome:'Automático (o app detecta)'},
+  {id:'xs',nome:'iPhone X, XS, 11 Pro',raio:39},
+  {id:'xr',nome:'iPhone XR, 11, XS Max, 11 Pro Max',raio:41},
+  {id:'12',nome:'iPhone 12, 13, 14, 16e',raio:47},
+  {id:'12pm',nome:'iPhone 12 e 13 Pro Max, 14 Plus',raio:53},
+  {id:'15',nome:'iPhone 14 Pro, 15, 15 Pro, 16',raio:55,ilha:{w:126,h:37,top:11}},
+  {id:'15pm',nome:'iPhone 14 Pro Max, 15 Plus, 15 Pro Max, 16 Plus',raio:55,ilha:{w:126,h:37,top:11}},
+  {id:'16p',nome:'iPhone 16 Pro, 17, 17 Pro',raio:62,ilha:{w:126,h:37,top:14}},
+  {id:'16pm',nome:'iPhone 16 Pro Max, 17 Pro Max',raio:62,ilha:{w:126,h:37,top:14}},
+  {id:'se',nome:'iPhone SE, 8 (sem entalhe)',raio:8}
+];
+const celPref=()=>{const pad={borda:true,ilha:true,modelo:'auto'};try{return Object.assign(pad,JSON.parse(localStorage.getItem('editorpdf-celular')||'{}'))}catch(e){return pad}};
+const celSalvar=p=>{try{localStorage.setItem('editorpdf-celular',JSON.stringify(p))}catch(e){}};
+let _satCel=null;
+function areaSeguraTopo(){if(_satCel!=null)return _satCel;try{const p=document.createElement('div');p.style.cssText='position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.appendChild(p);_satCel=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove()}catch(e){_satCel=0}return _satCel}
+function raioAuto(){const w=innerWidth,hh=innerHeight;if(areaSeguraTopo()<=20)return 8;if(w===375&&hh===812)return 39;if(w===414)return 41;if(w===390)return 47;if(w===428)return 53;if(w===393||w===430)return 55;if(w===402||w===440)return 62;return 47}
+const SVGNS='http://www.w3.org/2000/svg';
+const svgEl=(t,at)=>{const e=document.createElementNS(SVGNS,t);for(const k in at)e.setAttribute(k,at[k]);return e};
+// monta o SVG: luz que corre a borda (horário), desce no meio do topo até a ilha, se divide em duas (uma para cada lado),
+// cada uma dá a volta na ilha, elas se juntam, sobem e a luz segue de novo pela borda
+function luzMontar(W,H,r,ilha,comBorda,comIlha,animar){
+  const ins=1.5,cx=W/2,R=Math.max(r-ins,1),f=n=>Math.round(n*100)/100;
+  const svg=svgEl('svg',{id:'luzBorda',width:W,height:H,viewBox:'0 0 '+W+' '+H,'aria-hidden':'true'});
+  const tela='M'+f(cx)+' '+ins+'H'+f(W-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins)+' '+f(ins+R)+'V'+f(H-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins-R)+' '+f(H-ins)+'H'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+ins+' '+f(H-ins-R)+'V'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(ins+R)+' '+ins+'H'+f(cx);
+  const fases=[];
+  const trilhos=[];
+  if(comBorda){trilhos.push(tela);fases.push({ds:[tela],v:460})}
+  if(comIlha&&ilha){
+    const x0=cx-ilha.w/2-1.5,x1=cx+ilha.w/2+1.5,y0=ilha.top-1.5,y1=ilha.top+ilha.h+1.5,rad=(y1-y0)/2;
+    const cw='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx);
+    const ccw='M'+f(cx)+' '+f(y0)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x0+rad)+' '+f(y1)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x1-rad)+' '+f(y0)+'H'+f(cx);
+    trilhos.push(cw);
+    if(comBorda)fases.push({ds:['M'+f(cx)+' '+ins+'V'+f(y0)],v:90});
+    fases.push({ds:[cw,ccw],v:210});
+    if(comBorda)fases.push({ds:['M'+f(cx)+' '+f(y0)+'V'+ins],v:90});
+  }
+  trilhos.forEach(d=>svg.appendChild(svgEl('path',{d,class:'trilho'})));
+  document.body.appendChild(svg);
+  if(!animar||!fases.length){svg.classList.add('parado');return svg}
+  const CAUDA=110,lista=[];let t=0;
+  // cada trecho dura o tempo da cabeça percorrer o caminho; o próximo começa quando a cabeça chega ao fim.
+  // O rastro (cauda) é no máximo o tamanho do trecho, para os trechos curtos (a descida até a ilha) não esticarem o tempo.
+  fases.forEach(fa=>{
+    const caminhos=fa.ds.map(d=>{const e=svgEl('path',{d});svg.appendChild(e);const L=e.getTotalLength();e.remove();return {d,L}});
+    const L=Math.max(...caminhos.map(c=>c.L)),cauda=Math.min(CAUDA,L),cab=L/fa.v*1000,ate=L+cauda,janela=cab*ate/L;
+    lista.push({caminhos,L,cauda,ate,ini:t,janela});t+=cab;
+  });
+  const T=Math.max(...lista.map(x=>x.ini+x.janela));
+  lista.forEach(fa=>fa.caminhos.forEach(c=>[{c:fa.cauda,cls:'cauda'},{c:Math.min(36,fa.L),cls:'cabeca'}].forEach(cam=>{
+    const e=svgEl('path',{d:c.d,class:cam.cls,'stroke-dasharray':cam.c+' '+(fa.ate+20)});
+    svg.appendChild(e);
+    const o0=cam.c,o1=cam.c-fa.ate;
+    try{e.animate([{strokeDashoffset:o0,offset:0},{strokeDashoffset:o0,offset:fa.ini/T},{strokeDashoffset:o1,offset:Math.min(1,(fa.ini+fa.janela)/T)},{strokeDashoffset:o1,offset:1}],{duration:T,iterations:Infinity,easing:'linear'})}catch(x){}
+  })));
+  return svg;
+}
+function aplicarVisualCelular(){
+  const h=document.documentElement,p=celPref(),sat=areaSeguraTopo();
+  const m=p.modelo==='auto'?null:MODELOS_CEL.find(x=>x.id===p.modelo);
+  const entalhe=m?m.raio>8:sat>20;
+  const ilha=m?(m.ilha||null):(sat>=54?{w:126,h:37,top:sat>=62?14:11}:null);
+  h.classList.toggle('tem-entalhe',!!entalhe);
+  const velho=document.getElementById('luzBorda');if(velho)velho.remove();
+  const quer=p.borda||(p.ilha&&ilha);
+  if(!quer)return;
+  const raio=m?m.raio:raioAuto(),movel=matchMedia('(max-width:700px)').matches;
+  const svg=luzMontar(innerWidth,innerHeight,raio,ilha,p.borda,p.ilha,movel&&!semMov());
+  svg.dataset.raio=raio;svg.dataset.borda=p.borda?'1':'0';
+  if(p.ilha&&ilha){svg.dataset.ilhaTop=ilha.top;svg.dataset.ilhaW=ilha.w}
+}
+{let t;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>{try{aplicarVisualCelular()}catch(e){}},250)})}
+try{aplicarVisualCelular()}catch(e){}
 // iPhone/iPad (Safari): ensina a instalar na Tela de Início, onde o app abre em tela cheia, sem a barra do navegador
 (()=>{
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
