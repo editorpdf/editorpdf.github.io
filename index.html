@@ -996,6 +996,8 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   #luzBorda .ilha{stroke-linecap:round}
   #luzBorda .ilha.cauda{stroke:#3d86ff;stroke-width:3.2;opacity:.75}  /* na ilha a luz é um pouco mais forte: a ilha de verdade cobre parte do traço */
   #luzBorda .ilha.cabeca{stroke:#a9d6ff;stroke-width:3.4;opacity:1}
+  #luzBorda .reforco.cauda{stroke:#4f95ff;stroke-width:4.2;opacity:.65}
+  #luzBorda .reforco.cabeca{stroke:#d6ecff;stroke-width:4.4;opacity:1}
 }
 .cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
 @media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
@@ -4511,11 +4513,16 @@ function luzMontar(W,H,r,ilha,comBorda,comIlha,animar){
   });
   // o ciclo fecha quando a última cabeça chega ao ponto de partida; os rastros que passam do fim continuam no ciclo seguinte (atraso por trecho)
   const T=Math.max(t,...lista.map(x=>x.janela));
+  // faixa de cima (barra de status, ilha): o iPhone suaviza essa área e a luz parecia mais fraca; ali o traço é desenhado de novo, mais forte
+  const defs=svgEl('defs',{}),cp=svgEl('clipPath',{id:'luzTopo'});cp.appendChild(svgEl('rect',{x:0,y:0,width:W,height:80}));defs.appendChild(cp);svg.appendChild(defs);
+  const gTopo=svgEl('g',{'clip-path':'url(#luzTopo)'});svg.appendChild(gTopo);
   lista.forEach(fa=>fa.caminhos.forEach(c=>[{c:fa.cauda,cls:'cauda'},{c:Math.min(36,fa.L),cls:'cabeca'}].forEach(cam=>{
-    const e=svgEl('path',{d:c.d,class:cam.cls+(fa.ilha?' ilha':''),'stroke-dasharray':cam.c+' '+(fa.ate+20),'stroke-dashoffset':cam.c});
-    svg.appendChild(e);
     const o0=cam.c,o1=cam.c-fa.ate;
-    try{e.animate([{strokeDashoffset:o0,offset:0},{strokeDashoffset:o1,offset:Math.min(1,fa.janela/T)},{strokeDashoffset:o1,offset:1}],{duration:T,delay:fa.ini,iterations:Infinity,easing:'linear',fill:'both'})}catch(x){}
+    [[svg,''],[gTopo,' reforco']].forEach(([pai,extra])=>{
+      const e=svgEl('path',{d:c.d,class:cam.cls+(fa.ilha?' ilha':'')+extra,'stroke-dasharray':cam.c+' '+(fa.ate+20),'stroke-dashoffset':cam.c});
+      pai.appendChild(e);
+      try{e.animate([{strokeDashoffset:o0,offset:0},{strokeDashoffset:o1,offset:Math.min(1,fa.janela/T)},{strokeDashoffset:o1,offset:1}],{duration:T,delay:fa.ini,iterations:Infinity,easing:'linear',fill:'both'})}catch(x){}
+    });
   })));
   return svg;
 }
