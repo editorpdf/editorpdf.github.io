@@ -986,10 +986,12 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 @media(max-width:700px){
   #luzBorda{display:block;position:fixed;left:0;top:0;z-index:310;pointer-events:none;overflow:visible;filter:drop-shadow(0 0 3px rgba(60,150,255,.55)) drop-shadow(0 0 7px rgba(40,110,255,.25))}
   #luzBorda path{fill:none;stroke-linecap:butt;stroke-linejoin:round}
-  #luzBorda .trilho{stroke:rgba(80,150,255,.12);stroke-width:2.6}
+  #luzBorda .trilho{stroke:rgba(80,150,255,.17);stroke-width:2.6}
   #luzBorda.parado .trilho{stroke:rgba(80,150,255,.55)}
   #luzBorda .cauda{stroke:#2f7bff;stroke-width:2.6;opacity:.38}
   #luzBorda .cabeca{stroke:#8cc8ff;stroke-width:2.8;opacity:.85}
+  #luzBorda .ilha.cauda{stroke:#3d86ff;stroke-width:3.2;opacity:.75}  /* na ilha a luz é um pouco mais forte: a ilha de verdade cobre parte do traço */
+  #luzBorda .ilha.cabeca{stroke:#a9d6ff;stroke-width:3.4;opacity:1}
 }
 .cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
 @media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
@@ -3475,8 +3477,8 @@ $('#bConfig').onclick=()=>{
       <label class="chk cfg"><input type="checkbox" id="cfgGuias" ${guiasLigado()?'checked':''}><span><b>Abrir cada PDF em uma guia</b><small>Vários PDFs no mesmo app, com guias no alto, como no Acrobat. Desligado: o PDF novo substitui o que está aberto.</small></span></label>
       <label class="chk cfg"><input type="checkbox" id="cfgEscuro" ${escuro?'checked':''}><span><b>Tema escuro</b><small>Também dá para trocar pelo botão da lua.</small></span></label>
       ${matchMedia('(max-width:700px)').matches?`<div id="cfgCel"><label class="chk cfg"><input type="checkbox" id="cfgBorda" ${celPref().borda?'checked':''}><span><b>Luz azul circulando a tela</b><small>Um brilho azul percorre a borda do celular, no sentido horário.</small></span></label>
-      <label class="chk cfg"><input type="checkbox" id="cfgIlha" ${celPref().ilha?'checked':''}><span><b>Luz na Dynamic Island</b><small>No meio do topo, a luz desce até a ilha, se divide, dá uma volta nela e sobe de novo. Só em iPhones com Dynamic Island (14 Pro em diante).</small></span></label>
-      <label class="cfg-sel"><b>Modelo do iPhone</b><select id="cfgModelo">${MODELOS_CEL.map(m=>`<option value="${m.id}" ${celPref().modelo===m.id?'selected':''}>${m.nome}</option>`).join('')}</select><small style="color:var(--muted)">Ajusta o canto do contorno e a posição do anel. Se algo parecer fora do lugar, escolha o seu modelo aqui.</small></label></div>`:''}`});
+      <label class="chk cfg"><input type="checkbox" id="cfgIlha" ${celPref().ilha?'checked':''}><span><b>Luz na Dynamic Island</b><small>No meio do topo, a luz desce até a ilha (ou o furo da câmera), se divide, dá uma volta nela e sobe de novo. Só em iPhones com Dynamic Island (14 Pro em diante) e no Galaxy S24 Ultra.</small></span></label>
+      <label class="cfg-sel"><b>Modelo do celular</b><select id="cfgModelo">${MODELOS_CEL.map(m=>`<option value="${m.id}" ${celPref().modelo===m.id?'selected':''}>${m.nome}</option>`).join('')}</select><small style="color:var(--muted)">Ajusta o canto do contorno e a posição da luz. Se algo parecer fora do lugar, escolha o seu modelo aqui.</small></label></div>`:''}`});
   if($('#cfgCel')){
     $('#cfgBorda').onchange=e=>{const p=celPref();p.borda=e.target.checked;celSalvar(p);aplicarVisualCelular()};
     $('#cfgIlha').onchange=e=>{const p=celPref();p.ilha=e.target.checked;celSalvar(p);aplicarVisualCelular()};
@@ -4445,8 +4447,11 @@ const MODELOS_CEL=[
   {id:'15pm',nome:'iPhone 14 Pro Max, 15 Plus, 15 Pro Max, 16 Plus',raio:55,ilha:{w:126,h:37,top:11}},
   {id:'16p',nome:'iPhone 16 Pro, 17, 17 Pro',raio:62,ilha:{w:126,h:37,top:14}},
   {id:'16pm',nome:'iPhone 16 Pro Max, 17 Pro Max',raio:62,ilha:{w:126,h:37,top:14}},
-  {id:'se',nome:'iPhone SE, 8 (sem entalhe)',raio:8}
+  {id:'se',nome:'iPhone SE, 8 (sem entalhe)',raio:8},
+  {id:'s24u',nome:'Galaxy S24 Ultra (furo da câmera)',raio:22,ilha:{w:18,h:18,top:11}}
 ];
+let _modeloAuto=null; // o Android diz o modelo (Chrome/WebView): o Galaxy S24 Ultra é reconhecido sozinho
+try{if(/Android/i.test(navigator.userAgent)&&navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues)navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{if(/SM-S928/i.test((v&&v.model)||'')){_modeloAuto='s24u';aplicarVisualCelular()}}).catch(()=>{})}catch(e){}
 const celPref=()=>{const pad={borda:true,ilha:true,modelo:'auto'};try{return Object.assign(pad,JSON.parse(localStorage.getItem('editorpdf-celular')||'{}'))}catch(e){return pad}};
 const celSalvar=p=>{try{localStorage.setItem('editorpdf-celular',JSON.stringify(p))}catch(e){}};
 let _satCel=null;
@@ -4459,42 +4464,49 @@ const svgEl=(t,at)=>{const e=document.createElementNS(SVGNS,t);for(const k in at
 function luzMontar(W,H,r,ilha,comBorda,comIlha,animar){
   const ins=1.5,cx=W/2,R=Math.max(r-ins,1),f=n=>Math.round(n*100)/100;
   const svg=svgEl('svg',{id:'luzBorda',width:W,height:H,viewBox:'0 0 '+W+' '+H,'aria-hidden':'true'});
-  const tela='M'+f(cx)+' '+ins+'H'+f(W-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins)+' '+f(ins+R)+'V'+f(H-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins-R)+' '+f(H-ins)+'H'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+ins+' '+f(H-ins-R)+'V'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(ins+R)+' '+ins+'H'+f(cx);
-  const fases=[];
-  const trilhos=[];
-  if(comBorda){trilhos.push(tela);fases.push({ds:[tela],v:460})}
-  if(comIlha&&ilha){
-    const x0=cx-ilha.w/2-1.5,x1=cx+ilha.w/2+1.5,y0=ilha.top-1.5,y1=ilha.top+ilha.h+1.5,rad=(y1-y0)/2;
-    const cw='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx);
-    const ccw='M'+f(cx)+' '+f(y0)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x0+rad)+' '+f(y1)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x1-rad)+' '+f(y0)+'H'+f(cx);
+  // volta completa na borda da tela, no sentido horário, saindo do meio do topo; "ini" é o ponto de partida (o resto do traço é igual)
+  const resto='H'+f(W-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins)+' '+f(ins+R)+'V'+f(H-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins-R)+' '+f(H-ins)+'H'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+ins+' '+f(H-ins-R)+'V'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(ins+R)+' '+ins+'H'+f(cx);
+  const tela='M'+f(cx)+' '+ins+resto;
+  const fases=[],trilhos=[];
+  const temIlha=!!(comIlha&&ilha);
+  if(comBorda)trilhos.push(tela);
+  let cw=null,ccw=null,y0=0;
+  if(temIlha){
+    const g=1.5+(ilha.folga==null?2.5:ilha.folga),x0=cx-ilha.w/2-g,x1=cx+ilha.w/2+g,y1=ilha.top+ilha.h+g,rad=(y1-(ilha.top-g))/2;y0=ilha.top-g;
+    cw='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx);
+    ccw='M'+f(cx)+' '+f(y0)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x0+rad)+' '+f(y1)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x1-rad)+' '+f(y0)+'H'+f(cx);
     trilhos.push(cw);
-    if(comBorda)fases.push({ds:['M'+f(cx)+' '+ins+'V'+f(y0)],v:90});
-    fases.push({ds:[cw,ccw],v:210});
-    if(comBorda)fases.push({ds:['M'+f(cx)+' '+f(y0)+'V'+ins],v:90});
   }
+  if(comBorda&&temIlha){
+    // um traço só: sai da ilha, sobe até a borda, dá a volta na tela e desce de novo até a ilha; ali se divide em duas
+    fases.push({ds:['M'+f(cx)+' '+f(y0)+'V'+ins+resto+'V'+f(y0)],v:460});
+    fases.push({ds:[cw,ccw],v:210,ilha:true});
+  }else if(comBorda)fases.push({ds:[tela],v:460});
+  else if(temIlha)fases.push({ds:[cw,ccw],v:210,ilha:true});
   trilhos.forEach(d=>svg.appendChild(svgEl('path',{d,class:'trilho'})));
+  if(comBorda&&temIlha)svg.appendChild(svgEl('path',{d:'M'+f(cx)+' '+f(y0)+'V'+ins,class:'trilho'}));
   document.body.appendChild(svg);
   if(!animar||!fases.length){svg.classList.add('parado');return svg}
   const CAUDA=110,lista=[];let t=0;
-  // cada trecho dura o tempo da cabeça percorrer o caminho; o próximo começa quando a cabeça chega ao fim.
-  // O rastro (cauda) é no máximo o tamanho do trecho, para os trechos curtos (a descida até a ilha) não esticarem o tempo.
+  // cada trecho dura o tempo da cabeça percorrer o caminho; o próximo começa quando a cabeça chega ao fim
   fases.forEach(fa=>{
     const caminhos=fa.ds.map(d=>{const e=svgEl('path',{d});svg.appendChild(e);const L=e.getTotalLength();e.remove();return {d,L}});
     const L=Math.max(...caminhos.map(c=>c.L)),cauda=Math.min(CAUDA,L),cab=L/fa.v*1000,ate=L+cauda,janela=cab*ate/L;
-    lista.push({caminhos,L,cauda,ate,ini:t,janela});t+=cab;
+    lista.push({caminhos,L,cauda,ate,ini:t,janela,ilha:!!fa.ilha});t+=cab;
   });
-  const T=Math.max(...lista.map(x=>x.ini+x.janela));
+  // o ciclo fecha quando a última cabeça chega ao ponto de partida; os rastros que passam do fim continuam no ciclo seguinte (atraso por trecho)
+  const T=Math.max(t,...lista.map(x=>x.janela));
   lista.forEach(fa=>fa.caminhos.forEach(c=>[{c:fa.cauda,cls:'cauda'},{c:Math.min(36,fa.L),cls:'cabeca'}].forEach(cam=>{
-    const e=svgEl('path',{d:c.d,class:cam.cls,'stroke-dasharray':cam.c+' '+(fa.ate+20)});
+    const e=svgEl('path',{d:c.d,class:cam.cls+(fa.ilha?' ilha':''),'stroke-dasharray':cam.c+' '+(fa.ate+20),'stroke-dashoffset':cam.c});
     svg.appendChild(e);
     const o0=cam.c,o1=cam.c-fa.ate;
-    try{e.animate([{strokeDashoffset:o0,offset:0},{strokeDashoffset:o0,offset:fa.ini/T},{strokeDashoffset:o1,offset:Math.min(1,(fa.ini+fa.janela)/T)},{strokeDashoffset:o1,offset:1}],{duration:T,iterations:Infinity,easing:'linear'})}catch(x){}
+    try{e.animate([{strokeDashoffset:o0,offset:0},{strokeDashoffset:o1,offset:Math.min(1,fa.janela/T)},{strokeDashoffset:o1,offset:1}],{duration:T,delay:fa.ini,iterations:Infinity,easing:'linear',fill:'both'})}catch(x){}
   })));
   return svg;
 }
 function aplicarVisualCelular(){
   const h=document.documentElement,p=celPref(),sat=areaSeguraTopo();
-  const m=p.modelo==='auto'?null:MODELOS_CEL.find(x=>x.id===p.modelo);
+  const m=p.modelo==='auto'?(_modeloAuto?MODELOS_CEL.find(x=>x.id===_modeloAuto):null):MODELOS_CEL.find(x=>x.id===p.modelo);
   const entalhe=m?m.raio>8:sat>20;
   const ilha=m?(m.ilha||null):(sat>=54?{w:126,h:37,top:sat>=62?14:11}:null);
   h.classList.toggle('tem-entalhe',!!entalhe);
