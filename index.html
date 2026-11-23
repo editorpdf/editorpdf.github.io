@@ -1193,6 +1193,7 @@ html.sem-mov #ilhaStatus path{animation:none;opacity:.95}
 @media(min-width:701px){#ilhaStatus,#ilhaToque{display:none}}
 .est-lista{margin:0 0 12px;padding-left:18px;max-height:40vh;overflow:auto;font-size:13px}
 .est-lista li{margin:4px 0}
+.est-diag{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -4954,8 +4955,10 @@ setInterval(async()=>{if(MOTOR_LOCAL||document.hidden)return;try{const r=await f
 function mostrarEstado(){
   const e=saudeEstado(),itens=SAUDE.log.slice(0,8);
   const hora=t=>new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dh=document.documentElement,dp=celPref(),dsat=areaSeguraTopo(),movelDg=matchMedia('(max-width:700px)').matches;
+  const diag=movelDg?'<p class="est-diag">Anel: '+(dp.status!==false?'ligado':'desligado em Configurações')+' · Aberto pelo: '+(dh.classList.contains('standalone')?'ícone da Tela de Início':'navegador (no Safari a ilha fica fora da página: o anel só aparece pelo ícone)')+' · Modelo: '+(dp.modelo==='auto'?'automático':dp.modelo)+' · Área segura do topo: '+Math.round(dsat)+' px · Anel na tela: '+(document.getElementById('ilhaStatus')?'sim':'não')+'</p>':'';
   const lista=itens.length?'<ul class="est-lista" id="estLista">'+itens.map(i=>'<li><b>'+hora(i.t)+'</b> '+esc(i.msg)+(i.pers&&SAUDE.persist.size?' <em>(ainda acontecendo)</em>':'')+'</li>').join('')+'</ul>':'<p id="estLista">Nenhum erro recente. Tudo certo.</p>';
-  dialog({title:e==='ok'?'Tudo certo':'O app teve um problema',sub:e==='ok'?'O anel da ilha está verde: nenhum erro agora.':'O anel da ilha está vermelho porque houve um erro. Ele volta a ficar verde sozinho quando o problema passa.',body:lista+'<div><button class="btn sm" type="button" id="estLimpar">Limpar a lista</button></div>',ok:'Fechar',cancel:''});
+  dialog({title:e==='ok'?'Tudo certo':'O app teve um problema',sub:e==='ok'?(document.getElementById('ilhaStatus')?'O anel da ilha está verde: nenhum erro agora.':'Nenhum erro agora.'):'Houve um erro'+(document.getElementById('ilhaStatus')?', e o anel da ilha está vermelho. Ele volta a ficar verde sozinho quando o problema passa.':'. Isto some sozinho quando o problema passa.'),body:lista+'<div><button class="btn sm" type="button" id="estLimpar">Limpar a lista</button></div>'+diag,ok:'Fechar',cancel:''});
   setTimeout(()=>{const b=$('#estLimpar');if(b)b.onclick=()=>{saudeLimpar();const l=$('#estLista');if(l)l.outerHTML='<p id="estLista">Lista limpa. Tudo certo.</p>'}},0)}
 function statusMontar(ilha){
   const W=innerWidth,H=innerHeight,cx=W/2,g=1.5+(ilha.folga==null?1:ilha.folga),f=n=>Math.round(n*100)/100;
