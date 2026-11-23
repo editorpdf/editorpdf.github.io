@@ -1048,8 +1048,9 @@ html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,2
   html.ios .app,html.ios .main{background:transparent}
   html.ios .view{background:radial-gradient(rgba(120,165,255,.08) 1px,transparent 1.3px) 0 0/24px 24px}
   /* barra de cima: cápsula de vidro */
-  html.ios .app{grid-template-rows:calc(64px + var(--sat)) auto minmax(0,1fr) calc(28px + var(--sab))}
-  html.ios .app>.top{margin:calc(var(--sat) + 6px) 10px 0;padding:0 8px;height:50px;align-self:start;border-radius:26px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.06)}
+  html.ios{--v-topo:max(6px,calc(var(--sat) - 4px))} /* a cápsula fica logo abaixo da ilha/entalhe */
+  html.ios .app{grid-template-rows:calc(var(--v-topo) + 58px) auto minmax(0,1fr) calc(28px + var(--sab))}
+  html.ios .app>.top{margin:var(--v-topo) 10px 0;padding:0 8px;height:50px;align-self:start;border-radius:26px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.06)}
   html.ios .app>.top::after{display:none}
   html.ios .top .btn{background:transparent;border:0;box-shadow:none;border-radius:16px}
   html.ios .top .btn:active{background:rgba(255,255,255,.16);transform:scale(.94)}
