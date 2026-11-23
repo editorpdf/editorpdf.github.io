@@ -971,6 +971,16 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 #dicaIos span{color:var(--muted)}
 #dicaIos svg{display:inline-block;width:14px;height:14px;vertical-align:-2px;color:var(--accent)}
 @media(max-width:700px){#dicaIos{bottom:calc(104px + var(--sab))}} /* acima da barra de ferramentas do celular */
+/* iPhone: barra de cima com respiro e sem botão colado na borda; sem a faixa escura vazia embaixo da tela inicial */
+@media(max-width:700px){
+  .app>.top{padding:var(--sat) 12px 0;gap:4px;justify-content:space-between}
+  .top .brand{padding:0;margin-right:2px}
+  .top .btn,.btn.icon,#bOpen,#bTools,#bOrg,#bExport,#bSave,#bPaleta{width:38px;min-width:38px;height:40px;padding:0}
+  .home-hero h1{text-wrap:balance}
+  .home{padding:20px 16px calc(24px + var(--sab))}
+  .app:has(.main.is-home){grid-template-rows:calc(52px + var(--sat)) auto minmax(0,1fr) 0}
+  .app:has(.main.is-home) .status{display:none}
+}
 
 /* cartão flutuante de opções (no lugar do painel lateral) */
 .main .right.flutua{display:block!important;position:fixed;right:16px;bottom:44px;left:auto;top:auto;width:264px;max-height:min(58vh,520px);overflow:auto;z-index:60;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px 14px}
