@@ -555,6 +555,13 @@ html[data-theme="dark"] .organizer{background:#1c1c1c}
 ::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--muted) 45%,transparent);border-radius:6px;border:4px solid transparent;background-clip:padding-box}
 ::-webkit-scrollbar-thumb:hover{border-width:3px}
 ::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-button{display:none;width:0;height:0} /* sem as setas dos extremos da barra de rolagem */
+::-webkit-scrollbar-corner{background:transparent}
+/* controles nativos (lista aberta dos campos de seleção, barras, calendário) seguem o tema do app; sem isto, no tema escuro a lista abria branca com letras claras */
+html[data-theme="dark"]{color-scheme:dark}
+html[data-theme="light"]{color-scheme:light}
+html[data-theme="dark"] select option,html[data-theme="dark"] select optgroup{background:#0f1a38;color:#e8eeff}
+html[data-theme="light"] select option,html[data-theme="light"] select optgroup{background:#ffffff;color:#16213f}
 
 @media(max-width:1000px){.main,.main.no-thumbs,.main.no-props,.main.no-thumbs.no-props{grid-template-columns:84px 0 minmax(0,1fr) 0}.thumbs,.right{display:none}}
 /* ---- celular: ferramentas embaixo, propriedades como gaveta, botões só com ícone ---- */
@@ -1017,7 +1024,7 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 .cfg-rot{display:block;font-size:14px;margin:4px 0 8px}
 .cfg-linha{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}.cfg-linha:last-child{border-bottom:0}
 .cfg-linha .btn{flex:none}
-.cfg-cores{display:flex;gap:12px;margin:0 0 6px;flex-wrap:wrap}
+.cfg-cores{display:flex;gap:14px;margin:0 0 6px;flex-wrap:wrap;padding:8px 10px} /* folga para o anel de seleção (6 px fora do círculo) não ser cortado pelo painel */
 .cfg-cor{position:relative;cursor:pointer;display:block}
 .cfg-cor input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
 .cfg-cor span{display:block;width:36px;height:36px;border-radius:50%;background:var(--c);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 8px rgba(0,0,0,.28);transition:transform .15s}
@@ -1040,7 +1047,7 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .cfg-pad{grid-template-columns:1fr 1fr}
 }
 .cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
-@media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
+@media(max-width:700px),(hover:none){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque (celular nem tablet) */
 @media(max-width:700px) and (prefers-reduced-motion:reduce){body::after{animation:none}}
 
 /* cartão flutuante de opções (no lugar do painel lateral) */
@@ -1381,9 +1388,9 @@ const {PDFDocument,StandardFonts,rgb,degrees,BlendMode,LineCapStyle,PDFHexString
 pdfjsLib.GlobalWorkerOptions.workerSrc='lib/pdf.worker.min.js';
 const dpr=Math.min(window.devicePixelRatio||1,2);
 
-/* ================= servidor local (modo avançado) ================= */
-// Quando a página é aberta pelo "Abrir editor.bat", um servidor Python no seu computador
-// apaga o texto antigo de verdade e reaproveita a fonte do PDF. Sem ele, o app usa o modo básico.
+/* ================= servidor local (edição completa) ================= */
+// No app do Windows, um servidor Python local (só neste computador) apaga o texto antigo de verdade
+// e reaproveita a fonte do PDF (edição completa). Sem ele, o app usa a edição simples.
 function bytesToB64(u8){let s='';const CH=0x8000;for(let i=0;i<u8.length;i+=CH)s+=String.fromCharCode.apply(null,u8.subarray(i,i+CH));return btoa(s)}
 function b64ToBytes(b){const s=atob(b),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u}
 // No celular (ou com ?motor=js) não há servidor: o motor MuPDF.js roda dentro da própria página
@@ -2312,7 +2319,7 @@ async function getBlocks(i){
   const pg=S.pages[i];
   if(!pg.blocksP){
     pg.blocksP=(async()=>{
-      if((pg.page.rotate||0)!==0)return null; // páginas giradas: modo básico
+      if((pg.page.rotate||0)!==0)return null; // páginas giradas: edição simples
       try{const j=await api('/api/analyze',{pdf:S.bytes,page:i});return j.rotated?null:j.blocks}
       catch(e){console.error(e);return null}
     })();
@@ -2637,7 +2644,7 @@ function scrollToHit(k){
   if(pg&&pg.el){const v=$('#view');const top=pg.el.offsetTop+h.rect[1]*S.scale-v.clientHeight/3;v.scrollTo({top,behavior:'smooth'})}
 }
 async function textoBusca(termo,maiusc,inteira){
-  // modo básico: procura no texto que o pdf.js extrai (linha a linha)
+  // edição simples: procura no texto que o pdf.js extrai (linha a linha)
   const res=[];const rx=new RegExp((inteira?'(?<![\\p{L}\\d_])':'')+termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+(inteira?'(?![\\p{L}\\d_])':''),'gu'+(maiusc?'':'i'));
   for(let i=0;i<S.pages.length;i++){const lines=await getLines(i);for(const ln of lines){let m;rx.lastIndex=0;while((m=rx.exec(ln.str))){const w=ln.w/Math.max(1,ln.str.length);
     res.push({pagina:i,texto:m[0],rect:[ln.x+m.index*w,ln.base-ln.fs*.9,ln.x+(m.index+m[0].length)*w,ln.base+ln.fs*.25]});if(!m[0].length)rx.lastIndex++}}}
@@ -3006,7 +3013,7 @@ function bindDefaults(){
 /* ================= salvar: grava os objetos dentro do PDF ================= */
 const STD={Helvetica:['Helvetica','HelveticaBold','HelveticaOblique','HelveticaBoldOblique'],Times:['TimesRoman','TimesRomanBold','TimesRomanItalic','TimesRomanBoldItalic'],Courier:['Courier','CourierBold','CourierOblique','CourierBoldOblique']};
 async function bake(bytes,objs){
-  // 1) modo avançado: troca de texto e tarjas são feitas pelo servidor, que apaga o conteúdo antigo de verdade
+  // 1) edição completa: troca de texto e tarjas são feitas pelo servidor, que apaga o conteúdo antigo de verdade
   const handled=new Set();
   if(S.srv){
     const ops=[];
@@ -3167,14 +3174,14 @@ function updateHome(){
   const c=$('#cardDocx');if(!c)return;
   const gate=(card,ok,why)=>{
     card.classList.toggle('off',!ok);let tag=$('.tag',card);
-    if(!ok&&!tag){tag=document.createElement('span');tag.className='tag';tag.textContent='precisa do painel';card.appendChild(tag)}
+    if(!ok&&!tag){tag=document.createElement('span');tag.className='tag';tag.textContent='só no aplicativo';card.appendChild(tag)}
     if(ok&&tag)tag.remove();
     card.title=ok?'':why;
   };
-  if(S.motorLocal){c.style.display='none';$('.home-hero p').textContent='O que você quer fazer com o PDF hoje? Edite o texto, assine, preencha formulários, junte e organize páginas. Tudo roda no celular, sem internet: o arquivo não é enviado a lugar nenhum.'}
-  gate(c,S.srv&&S.docx!==false,'Abra o editor pelo "Painel Editor de PDF" para converter para Word');
-  gate($('#cardOcr'),S.srv&&!!S.ocr,'Abra o editor pelo "Painel Editor de PDF" (com os idiomas de OCR instalados) para reconhecer texto');
-  $('#homeFoot').textContent=S.srv?'Edição completa ativa: troca de texto real, tarja e conversão para Word.':'Edição simples: para trocar o texto de verdade, usar a tarja e converter para Word, use o aplicativo Editor de PDF no computador.';
+  if(S.motorLocal){c.style.display='none';$('.home-hero p').textContent='O que você quer fazer com o PDF hoje? Edite o texto, assine, preencha formulários, junte e organize páginas. Tudo roda no seu aparelho, sem internet: o arquivo não é enviado a lugar nenhum.'}
+  gate(c,S.srv&&S.docx!==false,'Converter para Word só funciona no aplicativo Editor de PDF do computador.');
+  gate($('#cardOcr'),S.srv&&!!S.ocr,!S.srv?'Reconhecer texto só funciona no aplicativo Editor de PDF do computador.':S.motorLocal?'Reconhecer texto não está disponível neste navegador. Use o aplicativo Editor de PDF do computador.':'Faltam os idiomas de reconhecimento de texto. Reinstale o aplicativo Editor de PDF.');
+  $('#homeFoot').textContent=S.srv?('Edição completa ativa: troca de texto real e tarja que apaga de verdade'+(S.docx!==false?', além da conversão para Word.':'.')):'Edição simples: para trocar o texto de verdade, usar a tarja e converter para Word, use o aplicativo Editor de PDF no computador.';
 }
 $('#cards').addEventListener('click',e=>{
   const c=e.target.closest('.card');if(!c)return;
@@ -3187,7 +3194,7 @@ $('#cards').addEventListener('click',e=>{
 });
 $('#homeMergeIn').addEventListener('change',async e=>{
   const files=[...e.target.files];e.target.value='';
-  if(files.length<2){toast('Escolha pelo menos 2 PDFs (segure Ctrl para marcar vários).',true);return}
+  if(files.length<2){toast('Escolha pelo menos 2 PDFs.',true);return}
   busy(true,'Juntando PDFs…');let bytes;
   try{
     const out=await PDFDocument.create();
@@ -3518,7 +3525,10 @@ function zipArquivos(lista){
 function openOcr(){
   if(!S.doc)return;
   if(!S.srv||!S.ocr){
-    dialog({title:'Reconhecer texto (OCR)',sub:'O reconhecimento de texto precisa do aplicativo Editor de PDF no computador e dos idiomas instalados.',body:'<p>Abra o <b>Editor de PDF</b> instalado no computador e tente de novo. Se o problema continuar, reinstale o aplicativo.</p>',ok:'Entendi',cancel:null});
+    const c=!S.srv?{sub:'O reconhecimento de texto só funciona no aplicativo Editor de PDF do computador.',b:'Use o aplicativo <b>Editor de PDF</b> instalado no computador para reconhecer texto de PDF escaneado.'}
+      :S.motorLocal?{sub:'O reconhecimento de texto não está disponível neste navegador.',b:'Use o aplicativo <b>Editor de PDF</b> do computador para reconhecer texto de PDF escaneado.'}
+      :{sub:'Faltam os idiomas de reconhecimento de texto neste computador.',b:'Reinstale o aplicativo <b>Editor de PDF</b>: o instalador traz os idiomas português e inglês.'};
+    dialog({title:'Reconhecer texto (OCR)',sub:c.sub,body:'<p>'+c.b+'</p>',ok:'Entendi',cancel:null});
     return;
   }
   const sel=[...S.pagesSel].sort((a,b)=>a-b),n=S.pages.length;
@@ -3553,7 +3563,9 @@ async function runOcr(paginas,idioma,pular){
 function openConvert(){
   if(!S.doc)return;
   if(!S.srv||S.docx===false){
-    dialog({title:'Converter para Word',sub:'A conversão para Word precisa do aplicativo Editor de PDF no computador.',body:'<p>Abra o <b>Editor de PDF</b> instalado no computador e tente de novo. Se o problema continuar, reinstale o aplicativo.</p>',ok:'Entendi',cancel:null});
+    const c=(!S.srv||S.motorLocal)?{sub:'A conversão para Word só funciona no aplicativo Editor de PDF do computador.',b:'Use o aplicativo <b>Editor de PDF</b> instalado no computador para converter este PDF em Word.'}
+      :{sub:'O componente de conversão para Word não está disponível nesta instalação.',b:'Reinstale o aplicativo <b>Editor de PDF</b> e tente de novo.'};
+    dialog({title:'Converter para Word',sub:c.sub,body:'<p>'+c.b+'</p>',ok:'Entendi',cancel:null});
     return;
   }
   const sel=[...S.pagesSel].sort((a,b)=>a-b),n=S.pages.length;
@@ -3694,7 +3706,7 @@ function abrirConfig(secaoInicial){
   const sel=(id,t,d,ops,atual)=>`<label class="cfg-sel"><b>${t}</b><select id="${id}">${ops.map(([v,n])=>`<option value="${v}"${String(v)===String(atual)?' selected':''}>${n}</option>`).join('')}</select>${d?`<small style="color:var(--muted)">${d}</small>`:''}</label>`;
   const cp=celPref(),pd=S.defaults,lp=lotePref(),acento=AJ.ler('acento','azul');
   const aparencia=`<div class="cfg-grupo"><h4>Tema</h4>
-      ${sel('cfgTema','Modo do tema','Automático acompanha o modo claro ou escuro do aparelho. Também dá para trocar pelo botão da lua.',[['auto','Automático (segue o aparelho)'],['light','Claro'],['dark','Escuro']],temaAuto()?'auto':document.documentElement.dataset.theme)}
+      ${sel('cfgTema','Modo do tema','Automático acompanha o modo claro ou escuro do aparelho.',[['auto','Automático (segue o aparelho)'],['light','Claro'],['dark','Escuro']],temaAuto()?'auto':document.documentElement.dataset.theme)}
       <b class="cfg-rot" id="cfgAcentoRot">Cor de destaque</b>
       <div class="cfg-cores" role="radiogroup" aria-labelledby="cfgAcentoRot">${Object.entries(ACENTOS).map(([id,a])=>`<label class="cfg-cor" title="${a.nome}"><input type="radio" name="cfgAcento" value="${id}" aria-label="${a.nome}"${acento===id?' checked':''}><span style="--c:${a.cor}"></span></label>`).join('')}</div>
     </div>
@@ -3712,8 +3724,8 @@ function abrirConfig(secaoInicial){
     </div>`:''}`;
   const documentos=`<div class="cfg-grupo"><h4>Abrir e fechar</h4>
       ${chk('cfgGuias','Abrir cada PDF em uma guia','Vários PDFs no mesmo app, com guias no alto, como no Acrobat. Desligado: o PDF novo substitui o que está aberto.',guiasLigado())}
-      ${sel('cfgZoom','Zoom ao abrir um PDF','Ajustar à largura mostra a página de lado a lado. Tamanho real abre em 100%.',[['largura','Ajustar à largura'],['100','Tamanho real (100%)']],AJ.ler('zoom-inicial','largura'))}
-      ${chk('cfgAvisoSair','Avisar antes de fechar com edições não salvas','Se ainda houver PDF com alterações que você não salvou, o app pergunta antes de fechar ou recarregar.',AJ.ler('aviso-sair','1')!=='0')}
+      ${sel('cfgZoom','Zoom ao abrir um PDF','Ajustar à largura: a página ocupa toda a largura da tela. Tamanho real: abre em 100%.',[['largura','Ajustar à largura'],['100','Tamanho real (100%)']],AJ.ler('zoom-inicial','largura'))}
+      ${chk('cfgAvisoSair','Avisar antes de fechar com edições não salvas',(window.pywebview?'Se ainda houver PDF com alterações que você não salvou, a janela pergunta antes de fechar. As cópias de segurança das edições aparecem na tela inicial para você recuperar.':'Se ainda houver PDF com alterações que você não salvou, o navegador pergunta antes de fechar ou recarregar a página.'),AJ.ler('aviso-sair','1')!=='0')}
     </div>
     <div class="cfg-grupo"><h4>Cópia de segurança</h4>
       ${chk('cfgRecAuto','Guardar uma cópia automática das edições','Enquanto você edita, o app guarda neste aparelho uma cópia das alterações não salvas (uma por guia), para recuperar se o app fechar sem querer. Desligado: nada novo é guardado.',AJ.ler('recuperar-auto','1')!=='0')}
@@ -3877,6 +3889,13 @@ $('#pno').addEventListener('change',e=>{const n=Math.max(1,Math.min(S.pages.leng
 // soltar um arquivo fora da área do documento nunca deve levar a janela para o arquivo (perderia as edições)
 ['dragover','drop'].forEach(ev=>window.addEventListener(ev,e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files'))e.preventDefault()}));
 window.addEventListener('beforeunload',e=>{try{if(AJ.ler('aviso-sair','1')!=='0'&&GUIAS.lista.some((g,i)=>!g.home&&(i===GUIAS.ativa?sujaAtiva():g.snap&&sujaSnap(g.snap)))){e.preventDefault();e.returnValue=''}}catch(x){}});
+// App do Windows: a janela (pywebview) não dispara o aviso do navegador. A tela conta as guias com edições não salvas e avisa o app, que pergunta ao fechar a janela.
+const guiasSujasN=()=>{try{if(AJ.ler('aviso-sair','1')==='0')return 0;return GUIAS.lista.filter((g,i)=>!g.home&&(i===GUIAS.ativa?sujaAtiva():g.snap&&sujaSnap(g.snap))).length}catch(x){return 0}};
+let _sujasEnviado=-1;
+setInterval(()=>{const a=window.pywebview&&pywebview.api;if(!a||!a.guias_sujas)return;const n=guiasSujasN();if(n!==_sujasEnviado){_sujasEnviado=n;try{a.guias_sujas(n)}catch(x){}}},1000);
+window.avisoSaidaEdicoes=async()=>{const a=window.pywebview&&pywebview.api;if(!a)return;const n=guiasSujasN();if(!n){a.fechar_descartando();return}
+  const ok=await confirmar('Fechar com edições não salvas?',n===1?'Um PDF tem alterações que você não salvou. Se fechar agora, elas serão perdidas.':n+' PDFs têm alterações que você não salvou. Se fechar agora, elas serão perdidas.','Fechar mesmo assim');
+  if(ok)a.fechar_descartando()};
 $('#view').addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();const f=e.dataTransfer.files[0];f.recente=true;openFile(f)}});
 window.addEventListener('resize',()=>{if(S.fit&&S.doc){fitWidth();setScale(S.scale,true)}});
 document.addEventListener('keydown',e=>{
@@ -3963,7 +3982,7 @@ function pontuaPaleta(c,toks,uso){
 }
 function mostrarAtalhos(){
   const T=[['Ctrl+K','Abrir a paleta de comandos'],['Ctrl+O','Abrir PDF'],['Ctrl+S','Salvar'],['Ctrl+P','Imprimir'],['Ctrl+F','Buscar e substituir'],['Ctrl+Z / Ctrl+Y','Desfazer / refazer'],
-    ['Ctrl+Tab / Ctrl+Shift+Tab','Próxima / guia anterior'],['Ctrl+1 … 9','Ir para a guia número…'],['Ctrl+W','Fechar a guia atual'],['Ctrl+Shift+T','Reabrir a guia fechada'],['Ctrl + roda do mouse','Zoom no ponto do mouse'],['Esc','Fechar janela ou tirar a seleção']];
+    ['Ctrl+Tab / Ctrl+Shift+Tab','Próxima / guia anterior'],['Ctrl+1 … 8','Ir para a guia 1 a 8'],['Ctrl+9','Ir para a última guia'],['Ctrl+W','Fechar a guia atual'],['Ctrl+Shift+T','Reabrir a guia fechada'],['Ctrl + roda do mouse','Zoom no ponto do mouse'],['Delete','Apagar o objeto selecionado (na Mesa, a página marcada)'],['Setas / Shift+setas','Mover o objeto selecionado (1 px / 10 px)'],['Esc','Fechar janela ou tirar a seleção']];
   dialog({title:'Atalhos de teclado',sub:'',body:'<table class="atalhos">'+T.map(([k,d])=>`<tr><td>${k.split(' / ').map(x=>'<kbd>'+esc(x)+'</kbd>').join(' ')}</td><td>${esc(d)}</td></tr>`).join('')+'</table>',ok:'Fechar',cancel:'',size:'sm'});
 }
 async function abrirPaleta(){
@@ -4107,7 +4126,7 @@ const TOOLS2=[
    {id:'padroes',t:'multi',l:'O que procurar',def:['cpf','email','telefone'],o:[['cpf','CPF'],['cnpj','CNPJ'],['rg','RG'],['email','E-mail'],['telefone','Telefone'],['cep','CEP'],['placa','Placa'],['data','Datas']]},
    {id:'termos',t:'text',l:'Palavras ou nomes (separe com ;)',ph:'ex.: João da Silva; Rua das Flores'},
    {id:'maiusculas',t:'check',l:'Diferenciar maiúsculas',def:false},{id:'metadados',t:'check',l:'Apagar também autor, título e outras informações do arquivo',def:true},{...PGS,id:'paginas'}],
-   dica:'Para conferir antes de apagar, abra o PDF no editor e use Tarja > Tarja automática.'},
+   dica:'Para conferir antes de apagar, abra o PDF no editor e use Exportar > Tarja automática.'},
  {id:'substituir',cat:'edseg',nome:'Buscar e substituir',desc:'Troque uma palavra ou frase em todas as páginas de uma vez.',icone:'replace',cor:'c4',acc:'.pdf',multi:true,min:1,run:'Substituir',usaAberto:true,opts:[
    {id:'busca',t:'text',l:'Procurar',par:1},{id:'troca',t:'text',l:'Substituir por',par:1},
    {id:'maiusculas',t:'check',l:'Diferenciar maiúsculas',def:false},{id:'inteira',t:'check',l:'Só palavra inteira',def:false},{...PGS,id:'paginas'}]},
@@ -4156,10 +4175,10 @@ function toolOk(t){
 }
 function toolWhy(t){
   if(S.motorLocal&&SO_COMPUTADOR.includes(t.id))return 'Esta ferramenta só existe na versão de computador.';
-  if(!S.srv)return 'Abra o editor pelo “Painel Editor de PDF” para usar esta ferramenta.';
+  if(!S.srv)return 'Esta ferramenta só funciona no aplicativo Editor de PDF do computador.';
   if(t.id==='office2pdf')return 'Só funciona no aplicativo do computador, e precisa do Microsoft Office instalado nele.';
   if(t.id==='html2pdf')return 'Só funciona no aplicativo do computador, e precisa do Edge ou do Chrome instalado nele.';
-  if(t.id==='ocr')return 'Faltam os idiomas de OCR (veja “Verificar instalação” no painel).';
+  if(t.id==='ocr')return 'Faltam os idiomas de reconhecimento de texto. Reinstale o aplicativo Editor de PDF.';
   if(t.id==='pdfa')return 'Falta o Ghostscript neste computador (o instalador do app já traz).';
   if(t.id==='assinar')return 'Por segurança, a assinatura com certificado só funciona no aplicativo do computador.';
   return '';

@@ -12,6 +12,10 @@ export async function iniciar() {
 }
 
 class Erro extends Error {}
+// funções que só existem no app do Windows: a mensagem diz onde dá para usar (no celular, ou no site aberto num computador)
+const NO_CELULAR = () => !!window.APP_CELULAR || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+const SO_WINDOWS = () => NO_CELULAR() ? 'Esta função não está disponível no celular.' : 'Esta função só existe no app do Windows.';
+const MSG_ALTERACAO = 'Não foi possível aplicar a alteração. Salve o PDF, reabra e tente de novo.';
 
 /* ------------------------------------------------------------ utilitários */
 const b64ParaBytes = b => { const s = atob(b), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
@@ -188,7 +192,7 @@ function fundirFragmentos(grupos) {
 function analisar(dados, pno) {
   const doc = abrir(dados);
   try {
-    if (!(pno >= 0 && pno < doc.countPages())) throw new Erro('página fora do documento');
+    if (!(pno >= 0 && pno < doc.countPages())) throw new Erro('Essa página não existe neste PDF.');
     const page = doc.loadPage(pno);
     const [x0p, y0p, x1p, y1p] = page.getBounds();
     if (rotacao(page)) return { rotated: true, blocks: [] };
@@ -265,12 +269,12 @@ function coresDaArea(pix, x0, y0, x1, y1) {
 /* ------------------------------------------------------------ aplicar trocas de texto e tarjas */
 function validar(ops, n) {
   const ok = v => typeof v === 'number' && isFinite(v) && Math.abs(v) < 1e6;
-  if (!Array.isArray(ops) || ops.length > 2000) throw new Erro('lista de operações inválida');
+  if (!Array.isArray(ops) || ops.length > 2000) throw new Erro(MSG_ALTERACAO);
   for (const o of ops) {
-    if (!o || !['rep', 'redact'].includes(o.kind)) throw new Erro('operação desconhecida');
-    if (!Number.isInteger(o.page) || o.page < 0 || o.page >= n) throw new Erro('página fora do documento');
-    if (!Array.isArray(o.bbox) || o.bbox.length !== 4 || !o.bbox.every(ok)) throw new Erro('área inválida');
-    if (o.kind === 'rep' && (!Array.isArray(o.origin) || !ok(o.size) || o.size < 1 || o.size > 500)) throw new Erro('troca de texto inválida');
+    if (!o || !['rep', 'redact'].includes(o.kind)) throw new Erro(MSG_ALTERACAO);
+    if (!Number.isInteger(o.page) || o.page < 0 || o.page >= n) throw new Erro('Essa página não existe neste PDF.');
+    if (!Array.isArray(o.bbox) || o.bbox.length !== 4 || !o.bbox.every(ok)) throw new Erro(MSG_ALTERACAO);
+    if (o.kind === 'rep' && (!Array.isArray(o.origin) || !ok(o.size) || o.size < 1 || o.size > 500)) throw new Erro(MSG_ALTERACAO);
   }
 }
 // quebra o texto em linhas que cabem na largura
@@ -1010,7 +1014,7 @@ F.img_girar = { min: 1, max: 100, ext: IMG, async fn(arqs, op) {
 const MIME = { pdf: 'application/pdf', zip: 'application/zip', jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', txt: 'text/plain; charset=utf-8' };
 async function executar(ferramenta, arquivos, opcoes) {
   const t = F[ferramenta];
-  if (!t) throw new Erro('Esta ferramenta não está disponível no celular.');
+  if (!t) throw new Erro(SO_WINDOWS());
   if (!(arquivos.length >= t.min && arquivos.length <= t.max)) throw new Erro(t.min === t.max ? `Esta ferramenta precisa de ${t.min} arquivo(s).` : `Esta ferramenta aceita de ${t.min} a ${t.max} arquivo(s).`);
   const arqs = arquivos.map(f => {
     const nome = String(f.nome || 'arquivo'), dados = b64ParaBytes(f.b64);
@@ -1098,9 +1102,9 @@ export async function chamar(caminho, corpo = {}) {
     if (caminho === '/api/apply') return saida(await aplicar(pdf, corpo.ops));
     if (caminho === '/api/ocr') return saida(await ocr(pdf, corpo.paginas, corpo.idioma, corpo.pular_com_texto !== false));
     if (caminho === '/api/buscar') return { resultados: buscar(pdf, corpo.opcoes || {}) };
-    throw new Erro('Esta função não está disponível no celular.');
+    throw new Erro(SO_WINDOWS());
   } catch (e) {
     if (!(e instanceof Erro)) console.error(e);
-    throw new Error(e instanceof Erro ? e.message : 'Erro no motor de PDF: ' + (e && e.message || e));
+    throw new Error(e instanceof Erro ? e.message : 'Não foi possível concluir. Se o PDF estiver danificado, tente “Reparar PDF”.');
   }
 }
