@@ -1184,15 +1184,19 @@ html.vidro[data-theme="light"]{--v-solido:rgba(250,252,255,.97)}
 html{--saude-cor:#30e060;--saude-brilho:rgba(48,224,96,.95)}
 html[data-saude="erro"]{--saude-cor:#ff3b30;--saude-brilho:rgba(255,59,48,.95)}
 #ilhaStatus{position:fixed;left:0;top:0;z-index:312;pointer-events:none;overflow:visible}
-#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:3.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--saude-brilho)) drop-shadow(0 0 9px var(--saude-brilho));animation:saudePisca 1.8s ease-in-out infinite}
-html[data-saude="erro"] #ilhaStatus path{stroke-width:4;animation:saudePiscaErro .7s ease-in-out infinite}
-@keyframes saudePisca{0%,38%{opacity:1}46%,88%{opacity:.14}96%,100%{opacity:1}} /* pisca: aceso, apaga quase todo e volta */
-@keyframes saudePiscaErro{0%,40%{opacity:1}50%,90%{opacity:.18}100%{opacity:1}}
+#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:4.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--saude-brilho)) drop-shadow(0 0 9px var(--saude-brilho));animation:saudePisca 1.8s ease-in-out infinite}
+html[data-saude="erro"] #ilhaStatus path{stroke-width:5;animation:saudePiscaErro .7s ease-in-out infinite}
+@keyframes saudePisca{0%,38%{opacity:1}46%,88%{opacity:.4}96%,100%{opacity:1}} /* pisca: aceso, apaga quase todo e volta */
+@keyframes saudePiscaErro{0%,40%{opacity:1}50%,90%{opacity:.4}100%{opacity:1}}
+#ilhaStatus .nucleo{stroke:#e4ffec;stroke-width:1.6;filter:none}
+html[data-saude="erro"] #ilhaStatus .nucleo{stroke:#ffe3e0;stroke-width:1.8}
 html.sem-mov #ilhaStatus path{animation:none;opacity:.95}
 @media(prefers-reduced-motion:reduce){#ilhaStatus path{animation:none;opacity:.95}}
 @media(min-width:701px){#ilhaStatus,#ilhaToque{display:none}}
 .est-lista{margin:0 0 12px;padding-left:18px;max-height:40vh;overflow:auto;font-size:13px}
 .est-lista li{margin:4px 0}
+/* no celular, segurar o dedo em cartões, botões e barras não seleciona texto (só o conteúdo do PDF e os campos) */
+@media(max-width:700px){.card,.tcard,.dropbox,.tool,.btn,.guia,.top,.rail,.status,.home-hero,.cfg-cat{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}}
 .est-diag{margin:12px 0 0;font-size:11.5px;line-height:1.5;color:var(--muted)}
 </style>
 </head>
@@ -4967,7 +4971,7 @@ function statusMontar(ilha){
   if(ilha.gota){const xl=cx-ilha.w/2-g,xr=cx+ilha.w/2+g,rb=(xr-xl)/2,ys=ilha.h+g-rb;d='M'+f(xl)+' 1.5V'+f(ys)+'A'+f(rb)+' '+f(rb)+' 0 0 0 '+f(xr)+' '+f(ys)+'V1.5'}
   else{const x0=cx-ilha.w/2-g,x1=cx+ilha.w/2+g,y0=ilha.top-g,y1=ilha.top+ilha.h+g,rad=(y1-y0)/2;
     d='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx)+'Z'}
-  svg.appendChild(svgEl('path',{d}));document.body.appendChild(svg);
+  svg.appendChild(svgEl('path',{d,class:'halo'}));svg.appendChild(svgEl('path',{d,class:'nucleo'}));document.body.appendChild(svg); // halo colorido + miolo claro: acende de verdade
   // área de toque um pouco maior que a ilha (o iPhone pode não entregar toques exatamente sobre ela): abre o estado do app
   const t=document.createElement('button');t.id='ilhaToque';t.type='button';t.setAttribute('aria-label','Ver o estado do app');
   t.style.cssText='position:fixed;left:'+f(cx-(ilha.w/2+18))+'px;top:'+Math.max(0,ilha.top-6)+'px;width:'+(ilha.w+36)+'px;height:'+(ilha.h+14)+'px;z-index:313;background:transparent;border:0;padding:0;border-radius:24px;-webkit-tap-highlight-color:transparent';
