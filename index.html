@@ -999,6 +999,46 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   #luzBorda .reforco.cauda{stroke:#4f95ff;stroke-width:4.2;opacity:.65}
   #luzBorda .reforco.cabeca{stroke:#d6ecff;stroke-width:4.4;opacity:1}
 }
+/* ===== Configurações em categorias (estilo "Ajustes") ===== */
+.cfg-app{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;min-height:400px;margin-top:8px}
+.cfg-nav{display:flex;flex-direction:column;gap:4px}
+.cfg-cat{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text);cursor:pointer;font:inherit;transition:background .15s,border-color .15s}
+.cfg-cat:hover{background:var(--subtle)}
+.cfg-cat[aria-selected=true]{background:var(--accent-soft);border-color:var(--stroke-ctl-b)}
+.cfg-cat:focus-visible,.cfg-volta:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.cfg-ic{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--grad);color:#fff;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.cfg-ic .i{width:18px;height:18px}
+.cfg-tx{display:flex;flex-direction:column;min-width:0;gap:1px}.cfg-tx b{font-weight:600;font-size:14px}.cfg-tx small{color:var(--muted);font-size:12px;line-height:1.35}
+.cfg-seta{display:none;margin-left:auto;color:var(--muted)}.cfg-seta .i{transform:rotate(-90deg);width:16px;height:16px}
+.cfg-corpo{min-width:0;max-height:64vh;overflow:auto;padding:0 6px 4px 0}
+.cfg-tit{margin:0 0 14px;font-size:17px;letter-spacing:-.01em;outline:0}
+.cfg-volta{display:none}
+.cfg-grupo{margin:0 0 20px}.cfg-grupo>h4{margin:0 0 10px;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.cfg-rot{display:block;font-size:14px;margin:4px 0 8px}
+.cfg-linha{display:flex;align-items:center;gap:14px;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}.cfg-linha:last-child{border-bottom:0}
+.cfg-linha .btn{flex:none}
+.cfg-cores{display:flex;gap:12px;margin:0 0 6px;flex-wrap:wrap}
+.cfg-cor{position:relative;cursor:pointer;display:block}
+.cfg-cor input{position:absolute;inset:0;width:100%;height:100%;opacity:0;margin:0;cursor:pointer}
+.cfg-cor span{display:block;width:36px;height:36px;border-radius:50%;background:var(--c);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 2px 8px rgba(0,0,0,.28);transition:transform .15s}
+.cfg-cor:hover span{transform:scale(1.06)}
+.cfg-cor input:checked+span{outline:3px solid var(--text);outline-offset:3px}
+.cfg-cor input:focus-visible+span{outline:3px solid var(--accent);outline-offset:3px}
+.cfg-pad{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}.cfg-pad label{display:flex;flex-direction:column;gap:5px;font-size:13px}.cfg-pad .full{grid-column:1/-1}
+.cfg-pad input[type=color]{width:100%;height:34px;padding:2px;border-radius:8px}
+.cfg-duas{display:flex;gap:18px}.cfg-pad .cfg-duas .chk{flex-direction:row;align-items:center}
+@media(max-width:700px){
+  .cfg-app{display:block;min-height:0;margin-top:2px}
+  .cfg-app[data-tela=lista] .cfg-corpo{display:none}
+  .cfg-app[data-tela=secao] .cfg-nav{display:none}
+  .cfg-cat{padding:12px;margin-bottom:8px;border-radius:16px;background:var(--subtle-2);border-color:var(--stroke-ctl)}
+  .cfg-cat[aria-selected=true]{background:var(--subtle-2);border-color:var(--stroke-ctl)}
+  .cfg-seta{display:block}
+  .cfg-volta{display:inline-flex;align-items:center;gap:2px;margin:0 0 6px -6px;padding:6px 10px 6px 2px;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:600;cursor:pointer}
+  .cfg-volta .i{transform:rotate(90deg);width:18px;height:18px}
+  .cfg-corpo{max-height:none;overflow:visible;padding:0}
+  .cfg-pad{grid-template-columns:1fr 1fr}
+}
 .cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
 @media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
 @media(max-width:700px) and (prefers-reduced-motion:reduce){body::after{animation:none}}
@@ -1361,6 +1401,8 @@ async function detectServer(){
 const S={srv:false,doc:null,bytes:null,pages:[],scale:1,tool:'select',objs:[],sel:null,hist:[],hi:-1,name:'',fit:true,
   pagesSel:new Set([0]),cur:0,busy:false,warned:false,defaults:{fs:14,font:'Helvetica',bold:false,italic:false,color:'#000000',stroke:'#e53935',sw:2,hl:'#ffeb3b'},
   form:{},hasForm:false,flatten:false,hits:[],multi:[]};
+const PADROES_FABRICA={...S.defaults}; // padrões do app; Configurações > "Padrões do que você acrescenta" guarda os do dono em editorpdf-padroes
+try{const pd=JSON.parse(localStorage.getItem('editorpdf-padroes')||'null');if(pd&&typeof pd==='object'){if(['Helvetica','Times','Courier'].includes(pd.font))S.defaults.font=pd.font;if(pd.fs>=4&&pd.fs<=200)S.defaults.fs=+pd.fs;if(pd.sw>=1&&pd.sw<=20)S.defaults.sw=+pd.sw;S.defaults.bold=!!pd.bold;S.defaults.italic=!!pd.italic;for(const k of ['color','hl','stroke'])if(/^#[0-9a-f]{6}$/i.test(pd[k]||''))S.defaults[k]=pd[k]}}catch(e){}
 let recT=null,recBytes={},histN=0; // recuperação automática e contador do histórico (usados desde o início)
 // ---- guias: vários PDFs abertos no mesmo app (Configurações: "Abrir cada PDF em uma guia") ----
 const GUIAS={lista:[],ativa:-1,fechadas:[]};
@@ -1507,7 +1549,8 @@ async function openDoc(bytes,{keepView=false}={}){
   if(S.cur>=S.pages.length)S.cur=S.pages.length-1;
   S.pagesSel=new Set([...S.pagesSel].filter(i=>i<S.pages.length));if(!S.pagesSel.size)S.pagesSel.add(Math.max(0,S.cur));
   $('#drop').style.display='none';$('#mainGrid').classList.remove('is-home'); // os painéis voltam antes de calcular o ajuste à largura
-  if(S.fit&&!keepView)fitWidth(true);
+  if(S.fit&&!keepView){if(S.zoomNovo&&AJ.ler('zoom-inicial','largura')==='100'){S.scale=1;S.fit=false;$('#zVal').textContent='100%'}else fitWidth(true)} // "Zoom ao abrir um PDF" (Configurações) vale só quando um PDF novo abre
+  S.zoomNovo=false;
   buildPages();buildThumbs();updateChrome();renderOrganizer();montarSumario();
   if(S.hasForm&&!keepView)setTimeout(()=>toast('Este PDF tem campos de formulário: clique neles para preencher.'),400);
 }
@@ -1533,7 +1576,7 @@ async function openFile(file){
     if(trocaGuia)esquecerRecuperacao(trocaGuia);
     S.rid=novoRid();S.name=file.name.replace(/\.pdf$/i,'');S.objs=[];S.sel=null;S.cur=0;S.pagesSel=new Set([0]);S.warned=false;S.fit=true;S.form={};S.flatten=false;S.hits=[];
     S.senha=senha;S.ofereceuOcr=false;
-    await openDoc(bytes);
+    S.zoomNovo=true;await openDoc(bytes);
     S.hist=[{bytes,objs:[]}];S.hi=0;S.recSalvo=chaveEdicao();updateChrome();
     if(senha)toast('Senha aceita. Ao salvar, o PDF continua protegido com a mesma senha.');
     if(file.recente)anotarRecente(file,original); // nos recentes fica o arquivo original, ainda com senha
@@ -3518,39 +3561,254 @@ if(matchMedia('(max-width:700px)').matches){$('#mainGrid').classList.add('no-pro
   por('no-thumbs','#bThumbs','sem-thumbs',!g.classList.contains('no-thumbs'));refitSoon()};
 })();
 $('#bProps').onclick=()=>{const off=$('#mainGrid').classList.toggle('no-props');$('#bProps').setAttribute('aria-pressed',String(!off));refitSoon()};
-function setTheme(t){const h=document.documentElement;try{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f6f8ff':'#060b1c'}catch(e){}try{if(window.pywebview&&pywebview.api&&pywebview.api.tema)pywebview.api.tema(t!=='light')}catch(e){}if(h.dataset.theme&&h.dataset.theme!==t&&!semMov()){h.classList.add('tema-anima');clearTimeout(window._tT);window._tT=setTimeout(()=>h.classList.remove('tema-anima'),420)}h.dataset.theme=t;$('#bTheme use').setAttribute('href',t==='dark'?'#i-sun':'#i-moon');try{localStorage.setItem('editorpdf-tema',t)}catch(e){}}
-$('#bTheme').onclick=()=>setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
-// Configurações: preferências deste aparelho (ficam no localStorage)
-$('#bConfig').onclick=()=>{
-  const escuro=document.documentElement.dataset.theme==='dark';
-  dialog({title:'Configurações',sub:'Valem só para este aparelho.',ok:'Fechar',cancel:'',
-    body:`<label class="chk cfg"><input type="checkbox" id="cfgDock" ${dockLigado()?'checked':''}><span><b>Ampliar ao passar o mouse</b><small>Os ícones das barras e dos menus crescem perto do mouse, como na Dock do Mac.</small></span></label>
-      <label class="chk cfg"><input type="checkbox" id="cfgGuias" ${guiasLigado()?'checked':''}><span><b>Abrir cada PDF em uma guia</b><small>Vários PDFs no mesmo app, com guias no alto, como no Acrobat. Desligado: o PDF novo substitui o que está aberto.</small></span></label>
-      <label class="chk cfg"><input type="checkbox" id="cfgEscuro" ${escuro?'checked':''}><span><b>Tema escuro</b><small>Também dá para trocar pelo botão da lua.</small></span></label>
-      ${matchMedia('(max-width:700px)').matches?`<div id="cfgCel"><label class="chk cfg"><input type="checkbox" id="cfgBorda" ${celPref().borda?'checked':''}><span><b>Luz azul circulando a tela</b><small>Um brilho azul percorre a borda do celular, no sentido horário.</small></span></label>
-      <label class="chk cfg"><input type="checkbox" id="cfgIlha" ${celPref().ilha?'checked':''}><span><b>Luz na Dynamic Island</b><small>No meio do topo, a luz desce até a ilha (ou o furo da câmera), se divide, dá uma volta nela e sobe de novo. Só em iPhones com Dynamic Island (14 Pro em diante) e no Galaxy S24 Ultra.</small></span></label>
-      <label class="cfg-sel"><b>Modelo do celular</b><select id="cfgModelo">${MODELOS_CEL.map(m=>`<option value="${m.id}" ${celPref().modelo===m.id?'selected':''}>${m.nome}</option>`).join('')}</select><small style="color:var(--muted)">Ajusta o canto do contorno e a posição da luz. Se algo parecer fora do lugar, escolha o seu modelo aqui.</small></label></div>`:''}`});
-  if($('#cfgCel')){
-    $('#cfgBorda').onchange=e=>{const p=celPref();p.borda=e.target.checked;celSalvar(p);aplicarVisualCelular()};
-    $('#cfgIlha').onchange=e=>{const p=celPref();p.ilha=e.target.checked;celSalvar(p);aplicarVisualCelular()};
-    $('#cfgModelo').onchange=e=>{const p=celPref();p.modelo=e.target.value;celSalvar(p);aplicarVisualCelular()};
-  }
-  $('#cfgDock').onchange=e=>{try{localStorage.setItem('editorpdf-dock',e.target.checked?'1':'0')}catch(_){}toast(e.target.checked?'Efeito ligado.':'Efeito desligado.')};
-  $('#cfgGuias').onchange=e=>{try{localStorage.setItem('editorpdf-guias',e.target.checked?'1':'0')}catch(_){}renderGuias();toast(e.target.checked?'Os próximos PDFs abrem em guias.':'Os próximos PDFs substituem o que está aberto.')};
-  $('#cfgEscuro').onchange=e=>setTheme(e.target.checked?'dark':'light');
-  // app do Windows (instalador): abrir junto com o Windows, escondido, para abrir na hora
-  const api=window.pywebview&&pywebview.api;
-  if(api&&api.inicio)api.inicio().then(r=>{
-    if(!r||!r.disponivel)return;const box=document.createElement('div');
-    const pintar=lig=>{box.innerHTML=`<label class="chk cfg"><input type="checkbox" id="cfgInicio" ${lig?'checked':''}><span><b>Abrir junto com o Windows</b><small>O app fica pronto em segundo plano e abre na hora. Usa cerca de 300 MB de memória enquanto o computador estiver ligado. Fechar a janela só esconde o app.</small></span></label>
-      ${lig?'<button class="btn sm" id="cfgSair" style="margin:-4px 0 12px 26px">Fechar o app de vez agora</button>':''}`;
-      $('#cfgInicio',box).onchange=async e=>{const x=await api.inicio(e.target.checked);if(x&&x.erro)toast('Não foi possível mudar: '+x.erro,true);
-        else toast(x.ligado?'Pronto: a partir da próxima vez que você entrar no Windows, o app abre na hora.':'Desligado: fechar a janela volta a encerrar o app.');pintar(!!(x&&x.ligado))};
-      const s=$('#cfgSair',box);if(s)s.onclick=()=>{if(confirm('Fechar o Editor de PDF agora? As alterações que você não salvou serão perdidas.'))api.sair()}};
-    pintar(!!r.ligado);const ult=$$('.modal .chk.cfg').pop();if(ult)ult.after(box);
-  }).catch(()=>{});
+/* ================= preferências e Configurações (categorias, estilo "Ajustes") ================= */
+// todas as preferências ficam no localStorage com o prefixo "editorpdf-"
+const AJ={ler:(k,d)=>{try{const v=localStorage.getItem('editorpdf-'+k);return v==null?d:v}catch(e){return d}},gravar:(k,v)=>{try{localStorage.setItem('editorpdf-'+k,v)}catch(e){}},apagar:k=>{try{localStorage.removeItem('editorpdf-'+k)}catch(e){}}};
+// cor de destaque: troca só as variáveis de acento (o resto do tema continua); "azul" é o padrão do app e não mexe em nada
+const ACENTOS={
+  azul:{nome:'Azul',cor:'#2f7bff'},
+  violeta:{nome:'Violeta',cor:'#8b5cf6',
+    escuro:{accent:'#9b7bff',hover:'#b49aff',press:'#7b58e6',soft:'rgba(155,123,255,.16)',glow:'rgba(155,123,255,.5)',grad:'linear-gradient(135deg,#6a3df0 0%,#a07bff 100%)'},
+    claro:{accent:'#6a3df0',hover:'#8560f5',press:'#5530c9',soft:'rgba(106,61,240,.10)',glow:'rgba(106,61,240,.35)',grad:'linear-gradient(135deg,#6a3df0 0%,#8a5cf6 100%)'}},
+  verde:{nome:'Verde',cor:'#22b27a',
+    escuro:{accent:'#2fd08a',hover:'#5adda5',press:'#1fa86c',soft:'rgba(47,208,138,.16)',glow:'rgba(47,208,138,.45)',grad:'linear-gradient(135deg,#0f9b63 0%,#2fd08a 100%)'},
+    claro:{accent:'#0f8a5f',hover:'#19a874',press:'#0b6f4c',soft:'rgba(15,138,95,.10)',glow:'rgba(15,138,95,.35)',grad:'linear-gradient(135deg,#0f8a5f 0%,#22b27a 100%)'}},
+  laranja:{nome:'Laranja',cor:'#ff8a1f',
+    escuro:{accent:'#ff9a3d',hover:'#ffb36a',press:'#e07a1a',soft:'rgba(255,154,61,.16)',glow:'rgba(255,154,61,.5)',grad:'linear-gradient(135deg,#ee6a0a 0%,#ffa94d 100%)'},
+    claro:{accent:'#d9620a',hover:'#ee7a22',press:'#b44f06',soft:'rgba(217,98,10,.10)',glow:'rgba(217,98,10,.35)',grad:'linear-gradient(135deg,#d9620a 0%,#f08a2c 100%)'}},
+  rosa:{nome:'Rosa',cor:'#ff4f9a',
+    escuro:{accent:'#ff5fa2',hover:'#ff82b8',press:'#e03f84',soft:'rgba(255,95,162,.16)',glow:'rgba(255,95,162,.5)',grad:'linear-gradient(135deg,#e0287a 0%,#ff6aa8 100%)'},
+    claro:{accent:'#d6246e',hover:'#e8478a',press:'#b01a58',soft:'rgba(214,36,110,.10)',glow:'rgba(214,36,110,.35)',grad:'linear-gradient(135deg,#d6246e 0%,#ee5a98 100%)'}}
 };
-(()=>{let t=null;try{t=localStorage.getItem('editorpdf-tema')}catch(e){}if(!t)t='dark';setTheme(t)})();
+function aplicarAcento(){
+  const h=document.documentElement,p=ACENTOS[AJ.ler('acento','azul')],t=h.dataset.theme==='light'?'claro':'escuro';
+  const vars=['--accent','--accent-hover','--accent-press','--accent-soft','--glow','--grad','--sel'];
+  if(!p||!p[t]){vars.forEach(v=>h.style.removeProperty(v));return}
+  const c=p[t];
+  h.style.setProperty('--accent',c.accent);h.style.setProperty('--accent-hover',c.hover);h.style.setProperty('--accent-press',c.press);
+  h.style.setProperty('--accent-soft',c.soft);h.style.setProperty('--glow',c.glow);h.style.setProperty('--grad',c.grad);h.style.setProperty('--sel',c.accent);
+}
+// tema: claro, escuro ou automático (segue o modo do aparelho enquanto o aparelho mudar)
+const prefereEscuro=()=>matchMedia('(prefers-color-scheme: dark)').matches;
+const temaAuto=()=>AJ.ler('tema-auto','0')==='1';
+function setTheme(t){const h=document.documentElement;try{const m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='light'?'#f6f8ff':'#060b1c'}catch(e){}try{if(window.pywebview&&pywebview.api&&pywebview.api.tema)pywebview.api.tema(t!=='light')}catch(e){}if(h.dataset.theme&&h.dataset.theme!==t&&!semMov()){h.classList.add('tema-anima');clearTimeout(window._tT);window._tT=setTimeout(()=>h.classList.remove('tema-anima'),420)}h.dataset.theme=t;$('#bTheme use').setAttribute('href',t==='dark'?'#i-sun':'#i-moon');try{localStorage.setItem('editorpdf-tema',t)}catch(e){}aplicarAcento()}
+function aplicarTemaAuto(escuro){setTheme((escuro===undefined?prefereEscuro():escuro)?'dark':'light')}
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(temaAuto())aplicarTemaAuto(e.matches)})}catch(e){}
+// o botão da lua é uma escolha manual: tira o modo automático
+const trocarTema=()=>{AJ.gravar('tema-auto','0');setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark')};
+$('#bTheme').onclick=trocarTema;
+// ao abrir o app: tema (automático ou o último escolhido) e "reduzir movimento"
+function aplicarPrefsIniciais(){
+  let t=AJ.ler('tema',null);if(!t)t='dark';if(temaAuto())t=prefereEscuro()?'dark':'light';
+  setTheme(t);if(AJ.ler('sem-mov','0')==='1')document.documentElement.classList.add('sem-mov');
+}
+aplicarPrefsIniciais();
+
+// ---- dados guardados neste aparelho (Privacidade): cada um tem a sua contagem e a sua limpeza ----
+async function limparRecentes(){
+  const l=await lerRecentes();for(const x of l)if(!x.caminho)await BANCO.del('bytes:'+x.chave).catch(()=>{});
+  await BANCO.set('recentes',[]);mostrarRecentes();
+}
+// cópias de recuperação que NÃO são de uma guia aberta agora (as das guias abertas continuam protegendo o que você edita)
+async function ridsRecSoltas(){
+  const abertas=new Set([S.rid,...GUIAS.lista.map(g=>g.snap&&g.snap.rid)].filter(Boolean));
+  const ids=await ridsRec();if(!ids.includes('')&&await BANCO.get('recuperar'))ids.push('');
+  return ids.filter(r=>!abertas.has(r));
+}
+async function limparRecuperacao(){for(const r of await ridsRecSoltas())await esquecerRecuperacao(r)}
+const LIMPEZAS=[
+  {id:'rec',tit:'Arquivos recentes',um:'arquivo na lista',pl:'arquivos na lista',conta:async()=>(await lerRecentes()).length,limpa:limparRecentes,
+    pergunta:'Limpar os arquivos recentes?',texto:n=>`Apaga a lista dos ${n} arquivo${n===1?'':'s'} recente${n===1?'':'s'} e as cópias guardadas neste aparelho. Os PDFs originais não são apagados.`,ok:'Recentes limpos.'},
+  {id:'cop',tit:'Cópias de recuperação',um:'arquivo com edições não salvas',pl:'arquivos com edições não salvas',conta:async()=>(await ridsRecSoltas()).length,limpa:limparRecuperacao,
+    pergunta:'Apagar as cópias de recuperação?',texto:n=>`Apaga as edições não salvas guardadas de ${n} arquivo${n===1?'':'s'}. Depois disso não dá para recuperá-las. As guias abertas agora não são afetadas.`,ok:'Cópias de recuperação apagadas.'},
+  {id:'ass',tit:'Assinaturas salvas',um:'assinatura',pl:'assinaturas',conta:async()=>assinaturasSalvas().length,limpa:async()=>AJ.apagar('assinaturas'),
+    pergunta:'Apagar as assinaturas salvas?',texto:n=>`Apaga ${n===1?'a assinatura guardada':`as ${n} assinaturas guardadas`} neste aparelho. Você poderá criar novas quando quiser.`,ok:'Assinaturas apagadas.'},
+  {id:'txt',tit:'Textos salvos',um:'texto',pl:'textos',conta:async()=>textosSalvos().length,limpa:async()=>{AJ.apagar('textos');if(S.doc)renderProps()},
+    pergunta:'Apagar os textos salvos?',texto:n=>`Apaga ${n===1?'o texto guardado':`os ${n} textos guardados`} para reaproveitar em outros PDFs.`,ok:'Textos apagados.'},
+  {id:'car',tit:'Carimbos salvos',um:'carimbo',pl:'carimbos',conta:async()=>carimbosSalvos().length+(AJ.ler('carimbo-nome','')?1:0),limpa:async()=>{AJ.apagar('carimbos');AJ.apagar('carimbo-nome')},
+    pergunta:'Apagar os carimbos salvos?',texto:n=>`Apaga os carimbos personalizados e o nome usado neles (${n} ite${n===1?'m':'ns'}).`,ok:'Carimbos apagados.'}
+];
+const lotePref=()=>{try{return JSON.parse(AJ.ler('lote','{}'))||{}}catch(e){return{}}};
+const loteSalvar=o=>AJ.gravar('lote',JSON.stringify({...lotePref(),...o}));
+const corValida=c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c);
+
+// ---- a tela de Configurações ----
+// Computador: lista de categorias à esquerda e a categoria aberta à direita. Celular: a lista ocupa a tela; tocar abre a categoria, com botão "‹ Configurações" para voltar.
+function abrirConfig(secaoInicial){
+  const movel=matchMedia('(max-width:700px)').matches,win=!!(window.pywebview&&window.pywebview.api),lote=temImpressaoLote();
+  const chk=(id,t,d,on)=>`<label class="chk cfg"><input type="checkbox" id="${id}" ${on?'checked':''}><span><b>${t}</b><small>${d}</small></span></label>`;
+  const sel=(id,t,d,ops,atual)=>`<label class="cfg-sel"><b>${t}</b><select id="${id}">${ops.map(([v,n])=>`<option value="${v}"${String(v)===String(atual)?' selected':''}>${n}</option>`).join('')}</select>${d?`<small style="color:var(--muted)">${d}</small>`:''}</label>`;
+  const cp=celPref(),pd=S.defaults,lp=lotePref(),acento=AJ.ler('acento','azul');
+  const aparencia=`<div class="cfg-grupo"><h4>Tema</h4>
+      ${sel('cfgTema','Modo do tema','Automático acompanha o modo claro ou escuro do aparelho. Também dá para trocar pelo botão da lua.',[['auto','Automático (segue o aparelho)'],['light','Claro'],['dark','Escuro']],temaAuto()?'auto':document.documentElement.dataset.theme)}
+      <b class="cfg-rot" id="cfgAcentoRot">Cor de destaque</b>
+      <div class="cfg-cores" role="radiogroup" aria-labelledby="cfgAcentoRot">${Object.entries(ACENTOS).map(([id,a])=>`<label class="cfg-cor" title="${a.nome}"><input type="radio" name="cfgAcento" value="${id}" aria-label="${a.nome}"${acento===id?' checked':''}><span style="--c:${a.cor}"></span></label>`).join('')}</div>
+    </div>
+    <div class="cfg-grupo"><h4>Movimento</h4>
+      ${chk('cfgSemMov','Reduzir movimento','Desliga as animações do app. Também fica assim sozinho se o aparelho pedir "reduzir movimento".',AJ.ler('sem-mov','0')==='1')}
+      ${chk('cfgDock','Ampliar ao passar o mouse','Os ícones das barras e dos menus crescem perto do mouse, como na Dock do Mac.',dockLigado())}
+    </div>
+    ${movel?`<div class="cfg-grupo" id="cfgCel"><h4>Tela do celular</h4>
+      ${chk('cfgBorda','Luz azul circulando a tela','Um brilho azul percorre a borda do celular, no sentido horário.',cp.borda)}
+      ${chk('cfgIlha','Luz na Dynamic Island','No meio do topo, a luz desce até a ilha (ou o furo da câmera), se divide, dá uma volta nela e sobe de novo. Só em iPhones com Dynamic Island (14 Pro em diante) e no Galaxy S24 Ultra.',cp.ilha)}
+      ${sel('cfgModelo','Modelo do celular','Ajusta o canto do contorno e a posição da luz. Se algo parecer fora do lugar, escolha o seu modelo aqui.',MODELOS_CEL.map(m=>[m.id,m.nome]),cp.modelo)}
+    </div>`:''}`;
+  const documentos=`<div class="cfg-grupo"><h4>Abrir e fechar</h4>
+      ${chk('cfgGuias','Abrir cada PDF em uma guia','Vários PDFs no mesmo app, com guias no alto, como no Acrobat. Desligado: o PDF novo substitui o que está aberto.',guiasLigado())}
+      ${sel('cfgZoom','Zoom ao abrir um PDF','Ajustar à largura mostra a página de lado a lado. Tamanho real abre em 100%.',[['largura','Ajustar à largura'],['100','Tamanho real (100%)']],AJ.ler('zoom-inicial','largura'))}
+      ${chk('cfgAvisoSair','Avisar antes de fechar com edições não salvas','Se ainda houver PDF com alterações que você não salvou, o app pergunta antes de fechar ou recarregar.',AJ.ler('aviso-sair','1')!=='0')}
+    </div>
+    <div class="cfg-grupo"><h4>Cópia de segurança</h4>
+      ${chk('cfgRecAuto','Guardar uma cópia automática das edições','Enquanto você edita, o app guarda neste aparelho uma cópia das alterações não salvas (uma por guia), para recuperar se o app fechar sem querer. Desligado: nada novo é guardado.',AJ.ler('recuperar-auto','1')!=='0')}
+    </div>
+    <div class="cfg-grupo" id="cfgPad"><h4>Padrões do que você acrescenta</h4>
+      <p class="hint" style="margin:0 0 10px">Valem para texto, traços, formas e realces novos. O que já está no PDF não muda.</p>
+      <div class="cfg-pad">
+        <label>Fonte do texto<select id="cfgFonte">${['Helvetica','Times','Courier'].map(f=>`<option${pd.font===f?' selected':''}>${f}</option>`).join('')}</select></label>
+        <label>Tamanho do texto (pt)<input type="number" id="cfgFs" min="4" max="200" step="0.5" value="${Math.round(pd.fs*10)/10}"></label>
+        <div class="full cfg-duas"><label class="chk"><input type="checkbox" id="cfgNeg"${pd.bold?' checked':''}> <b>Negrito</b></label><label class="chk"><input type="checkbox" id="cfgIta"${pd.italic?' checked':''}> <i>Itálico</i></label></div>
+        <label>Cor do texto<input type="color" id="cfgCorTexto" value="${pd.color}"></label>
+        <label>Cor do realce<input type="color" id="cfgCorRealce" value="${pd.hl}"></label>
+        <label>Cor do traço e das formas<input type="color" id="cfgCorTraco" value="${pd.stroke}"></label>
+        <label>Espessura do traço<input type="number" id="cfgEspessura" min="1" max="20" value="${pd.sw}"></label>
+        <div class="full"><button class="btn sm" type="button" id="cfgPadReset">Voltar aos padrões do app</button></div>
+      </div></div>`;
+  const windows=`${lote?`<div class="cfg-grupo"><h4>Imprimir vários PDFs</h4>
+      <p class="hint" style="margin:0 0 10px">Ponto de partida da janela "Imprimir vários PDFs" (você ainda pode mudar lá).</p>
+      <label class="cfg-sel"><b>Impressora</b><select id="cfgImpressora"><option value="">Procurando impressoras…</option></select></label>
+      <label class="cfg-sel"><b>Cópias de cada arquivo</b><input type="number" id="cfgCopias" min="1" max="99" value="${Math.min(99,Math.max(1,parseInt(lp.copias,10)||1))}" style="max-width:120px"></label>
+      ${sel('cfgDuplex','Frente e verso','',[['nao','Não'],['longa','Pela borda longa'],['curta','Pela borda curta']],['nao','longa','curta'].includes(lp.duplex)?lp.duplex:'nao')}
+      ${chk('cfgAjustar','Ajustar à página','Reduz o conteúdo para caber na folha.',lp.ajustar!==false)}
+      ${chk('cfgCinza','Preto e branco','Imprime tudo em tons de cinza.',!!lp.cinza)}
+      ${chk('cfgEsperar','Esperar cada arquivo terminar antes de mandar o próximo','Mais seguro: se algo falhar, o app para e avisa em vez de perder arquivos.',lp.esperar!==false)}
+    </div>`:''}
+    <div class="cfg-grupo"><h4>Windows</h4><div id="cfgInicioBox"><p class="hint" style="margin:0">Procurando…</p></div></div>
+    <div class="cfg-grupo"><h4>Atualizações</h4>
+      ${S.loja?'<p class="hint" style="margin:0">Instalado pela Microsoft Store: as atualizações chegam pela própria Loja.</p>'
+        :`<div class="cfg-linha"><span class="cfg-tx"><b>Versão ${esc(window.APP_VERSAO||S.versaoApp||'')}</b><small>O app confere sozinho ao abrir. Aqui você pode conferir agora.</small></span><button class="btn sm" type="button" id="cfgAtualizar">Verificar agora</button></div>`}
+    </div>`;
+  const linhas=LIMPEZAS.map(l=>`<div class="cfg-linha"><span class="cfg-tx"><b>${l.tit}</b><small id="cfgD-${l.id}">Contando…</small></span><button class="btn sm" type="button" id="cfgLimp-${l.id}" data-l="${l.id}" disabled>Limpar…</button></div>`).join('');
+  const verAtual=window.APP_VERSAO||S.versaoApp;
+  const privacidade=`<div class="cfg-grupo"><h4>Dados guardados neste aparelho</h4>
+      <p class="hint" style="margin:0 0 6px">Cada item pede confirmação e apaga só o que está escrito. Seus PDFs nunca são apagados.</p>${linhas}</div>
+    <div class="cfg-grupo"><h4>Ajuda e informações</h4>
+      <div class="cfg-linha"><span class="cfg-tx"><b>Atalhos de teclado</b><small>Lista das teclas e da busca de comandos (Ctrl K).</small></span><button class="btn sm" type="button" id="cfgAtalhos">Ver</button></div>
+      <div class="cfg-linha"><span class="cfg-tx"><b>Sobre e licenças</b><small>${verAtual?`Versão ${esc(verAtual)}. `:''}Software livre (AGPL) e componentes de terceiros.</small></span><button class="btn sm" type="button" id="cfgSobre">Abrir</button></div>
+      ${(!win&&window.AndroidApp&&!S.loja)?'<div class="cfg-linha"><span class="cfg-tx"><b>Atualização</b><small>Confere se há versão nova do app.</small></span><button class="btn sm" type="button" id="cfgAtualizar">Verificar agora</button></div>':''}
+    </div>`;
+  const SECOES=[['aparencia','sun','Aparência','Tema, cores e movimento',aparencia],['documentos','edit','Documentos e edição','Guias, zoom e padrões',documentos]];
+  if(win)SECOES.push(['windows','print','Impressão e Windows','Impressora, início e atualizações',windows]);
+  SECOES.push(['privacidade','lock','Privacidade, atalhos e sobre','Dados guardados e informações',privacidade]);
+  const body=`<div class="cfg-app" id="cfgApp" data-tela="${movel?'lista':'secao'}">
+      <div class="cfg-nav" role="tablist" aria-orientation="vertical" aria-label="Categorias das configurações">${SECOES.map(([id,ico,nome,desc])=>`<button type="button" class="cfg-cat" role="tab" id="cfgT-${id}" aria-controls="cfgP-${id}" aria-selected="false" tabindex="-1" data-sec="${id}"><span class="cfg-ic">${ic(ico)}</span><span class="cfg-tx"><b>${nome}</b><small>${desc}</small></span><span class="cfg-seta">${ic('chev')}</span></button>`).join('')}</div>
+      <div class="cfg-corpo"><button type="button" class="cfg-volta" id="cfgVolta">${ic('chev')}<span>Configurações</span></button><h3 class="cfg-tit" id="cfgTit" tabindex="-1"></h3>
+        ${SECOES.map(([id,,,,html])=>`<section class="cfg-painel" role="tabpanel" id="cfgP-${id}" aria-labelledby="cfgT-${id}" hidden>${html}</section>`).join('')}</div></div>`;
+  const bg=dialog({title:'Configurações',sub:'Valem só para este aparelho.',ok:'Fechar',cancel:'',size:'lg',body});
+  const app=$('#cfgApp',bg),cats=$$('.cfg-cat',bg),paineis=$$('.cfg-painel',bg);
+  const ir=(id,abrir)=>{
+    const c=cats.find(b=>b.dataset.sec===id)||cats[0];
+    cats.forEach(b=>{const on=b===c;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1});
+    paineis.forEach(p=>p.hidden=p.id!=='cfgP-'+c.dataset.sec);
+    $('#cfgTit',bg).textContent=$('.cfg-tx b',c).textContent;
+    if(abrir){app.dataset.tela='secao';$('#cfgTit',bg).focus()}
+  };
+  const voltar=()=>{app.dataset.tela='lista';const c=cats.find(b=>b.getAttribute('aria-selected')==='true')||cats[0];c.tabIndex=0;c.focus()};
+  cats.forEach((b,i)=>{
+    b.onclick=()=>ir(b.dataset.sec,true);
+    b.onkeydown=e=>{ // setas, Home e End percorrem as categorias
+      const k=e.key;if(!['ArrowDown','ArrowUp','Home','End'].includes(k))return;e.preventDefault();
+      const j=k==='Home'?0:k==='End'?cats.length-1:(i+(k==='ArrowDown'?1:-1)+cats.length)%cats.length;
+      cats[j].focus();if(app.dataset.tela!=='lista'||!movel)ir(cats[j].dataset.sec,false);else cats.forEach((x,n)=>x.tabIndex=n===j?0:-1)};
+  });
+  $('#cfgVolta',bg).onclick=voltar;
+  app.addEventListener('keydown',e=>{if(e.key==='Escape'&&movel&&app.dataset.tela==='secao'){e.stopPropagation();voltar()}}); // no celular, Esc volta para a lista antes de fechar
+  ir(secaoInicial||'aparencia',false);
+  if(movel){app.dataset.tela='lista';cats[0].tabIndex=0}
+  (movel?cats[0]:cats.find(b=>b.getAttribute('aria-selected')==='true')).focus();
+
+  // ---- Aparência ----
+  $('#cfgTema',bg).onchange=e=>{const v=e.target.value;AJ.gravar('tema-auto',v==='auto'?'1':'0');if(v==='auto')aplicarTemaAuto();else setTheme(v)};
+  $$('input[name=cfgAcento]',bg).forEach(r=>r.onchange=()=>{AJ.gravar('acento',r.value);aplicarAcento()});
+  $('#cfgSemMov',bg).onchange=e=>{AJ.gravar('sem-mov',e.target.checked?'1':'0');document.documentElement.classList.toggle('sem-mov',e.target.checked);toast(e.target.checked?'Movimento reduzido.':'Animações ligadas.')};
+  $('#cfgDock',bg).onchange=e=>{AJ.gravar('dock',e.target.checked?'1':'0');toast(e.target.checked?'Efeito ligado.':'Efeito desligado.')};
+  if($('#cfgCel',bg)){
+    $('#cfgBorda',bg).onchange=e=>{const p=celPref();p.borda=e.target.checked;celSalvar(p);aplicarVisualCelular()};
+    $('#cfgIlha',bg).onchange=e=>{const p=celPref();p.ilha=e.target.checked;celSalvar(p);aplicarVisualCelular()};
+    $('#cfgModelo',bg).onchange=e=>{const p=celPref();p.modelo=e.target.value;celSalvar(p);aplicarVisualCelular()};
+  }
+  // ---- Documentos e edição ----
+  $('#cfgGuias',bg).onchange=e=>{AJ.gravar('guias',e.target.checked?'1':'0');renderGuias();toast(e.target.checked?'Os próximos PDFs abrem em guias.':'Os próximos PDFs substituem o que está aberto.')};
+  $('#cfgZoom',bg).onchange=e=>{AJ.gravar('zoom-inicial',e.target.value==='100'?'100':'largura');toast(e.target.value==='100'?'Os próximos PDFs abrem em 100%.':'Os próximos PDFs abrem ajustados à largura.')};
+  $('#cfgAvisoSair',bg).onchange=e=>{AJ.gravar('aviso-sair',e.target.checked?'1':'0')};
+  $('#cfgRecAuto',bg).onchange=e=>{AJ.gravar('recuperar-auto',e.target.checked?'1':'0');toast(e.target.checked?'Cópia automática ligada.':'Cópia automática desligada. O que já estava guardado continua.')};
+  const lerPad=()=>{
+    const f=$('#cfgFonte',bg).value,fs=parseFloat($('#cfgFs',bg).value),sw=parseInt($('#cfgEspessura',bg).value,10);
+    if(['Helvetica','Times','Courier'].includes(f))pd.font=f;
+    if(fs>=4&&fs<=200)pd.fs=fs;if(sw>=1&&sw<=20)pd.sw=sw;
+    pd.bold=$('#cfgNeg',bg).checked;pd.italic=$('#cfgIta',bg).checked;
+    for(const [id,k] of [['cfgCorTexto','color'],['cfgCorRealce','hl'],['cfgCorTraco','stroke']]){const c=$('#'+id,bg).value;if(corValida(c))pd[k]=c}
+    AJ.gravar('padroes',JSON.stringify(pd));if(S.doc)renderProps();
+  };
+  $('#cfgPad',bg).addEventListener('change',lerPad);
+  $('#cfgPadReset',bg).onclick=()=>{
+    Object.assign(pd,PADROES_FABRICA);AJ.apagar('padroes');
+    $('#cfgFonte',bg).value=pd.font;$('#cfgFs',bg).value=pd.fs;$('#cfgNeg',bg).checked=pd.bold;$('#cfgIta',bg).checked=pd.italic;
+    $('#cfgCorTexto',bg).value=pd.color;$('#cfgCorRealce',bg).value=pd.hl;$('#cfgCorTraco',bg).value=pd.stroke;$('#cfgEspessura',bg).value=pd.sw;
+    if(S.doc)renderProps();toast('Padrões do app restaurados.');
+  };
+  // ---- Impressão e Windows (só no app do Windows) ----
+  if(win){
+    const api=window.pywebview.api;
+    if(lote){
+      api.listar_impressoras().then(r=>{
+        const s=$('#cfgImpressora',bg);if(!s||!document.contains(bg))return;const l=(r&&r.impressoras)||[];
+        if(!l.length){s.innerHTML='<option value="">Nenhuma impressora encontrada</option>';return}
+        s.innerHTML=l.map(p=>`<option value="${esc(p.nome)}">${esc(p.nome)}${p.padrao?' (padrão)':''}</option>`).join('');
+        const pdp=l.find(p=>p.padrao);s.value=l.some(p=>p.nome===lp.impressora)?lp.impressora:(pdp||l[0]).nome;
+      }).catch(()=>{const s=$('#cfgImpressora',bg);if(s)s.innerHTML='<option value="">Não foi possível listar</option>'});
+      $('#cfgImpressora',bg).onchange=e=>{if(e.target.value)loteSalvar({impressora:e.target.value})};
+      $('#cfgCopias',bg).onchange=e=>{const n=Math.min(99,Math.max(1,parseInt(e.target.value,10)||1));e.target.value=n;loteSalvar({copias:n})};
+      $('#cfgDuplex',bg).onchange=e=>loteSalvar({duplex:e.target.value});
+      $('#cfgAjustar',bg).onchange=e=>loteSalvar({ajustar:e.target.checked});
+      $('#cfgCinza',bg).onchange=e=>loteSalvar({cinza:e.target.checked});
+      $('#cfgEsperar',bg).onchange=e=>loteSalvar({esperar:e.target.checked});
+    }
+    // abrir junto com o Windows (escondido, para abrir na hora)
+    const box=$('#cfgInicioBox',bg);
+    if(api.inicio)api.inicio().then(r=>{
+      if(!document.contains(bg))return;
+      if(!r||!r.disponivel){box.innerHTML='<p class="hint" style="margin:0">Não disponível nesta instalação.</p>';return}
+      const pintar=lig=>{box.innerHTML=`<label class="chk cfg"><input type="checkbox" id="cfgInicio" ${lig?'checked':''}><span><b>Abrir junto com o Windows</b><small>O app fica pronto em segundo plano e abre na hora. Usa cerca de 300 MB de memória enquanto o computador estiver ligado. Fechar a janela só esconde o app.</small></span></label>
+        ${lig?'<button class="btn sm" type="button" id="cfgSair" style="margin:-4px 0 12px 26px">Fechar o app de vez agora</button>':''}`;
+        $('#cfgInicio',box).onchange=async e=>{const x=await api.inicio(e.target.checked);if(x&&x.erro)toast('Não foi possível mudar: '+x.erro,true);
+          else toast(x.ligado?'Pronto: a partir da próxima vez que você entrar no Windows, o app abre na hora.':'Desligado: fechar a janela volta a encerrar o app.');pintar(!!(x&&x.ligado))};
+        const s=$('#cfgSair',box);if(s)s.onclick=()=>{if(confirm('Fechar o Editor de PDF agora? As alterações que você não salvou serão perdidas.'))api.sair()}};
+      pintar(!!r.ligado);
+    }).catch(()=>{box.innerHTML='<p class="hint" style="margin:0">Não foi possível ler esta opção.</p>'});
+    else box.innerHTML='<p class="hint" style="margin:0">Não disponível nesta instalação.</p>';
+  }
+  const bAt=$('#cfgAtualizar',bg);if(bAt)bAt.onclick=()=>verAtualizacao(true);
+  // ---- Privacidade, atalhos e sobre ----
+  const pintarDados=async()=>{
+    for(const l of LIMPEZAS){
+      let n=0;try{n=await l.conta()}catch(e){}
+      if(!document.contains(bg))return;
+      const d=$('#cfgD-'+l.id,bg),b=$('#cfgLimp-'+l.id,bg);if(!d||!b)continue;
+      d.textContent=n?`${n} ${n===1?l.um:l.pl}`:'Nada guardado.';b.dataset.n=n;b.disabled=!n;
+    }
+  };
+  $$('[data-l]',bg).forEach(b=>b.onclick=async()=>{
+    const l=LIMPEZAS.find(x=>x.id===b.dataset.l),n=+b.dataset.n||0;if(!l||!n)return;
+    if(!await confirmar(l.pergunta,l.texto(n),'Apagar'))return;
+    try{await l.limpa();toast.ok(l.ok)}catch(e){toast.erro('Não foi possível apagar: '+(e&&e.message||e))}
+    pintarDados();
+  });
+  pintarDados();
+  $('#cfgAtalhos',bg).onclick=()=>mostrarAtalhos();
+  $('#cfgSobre',bg).onclick=()=>$('#bSobre').click();
+  return bg;
+}
+$('#bConfig').onclick=()=>abrirConfig();
 // app do Windows: a barra de título do sistema fica na cor do tema e o nome do app não se repete na barra de cima
 (()=>{const ini=()=>{document.documentElement.classList.add('nativo');try{pywebview.api.tema(document.documentElement.dataset.theme!=='light')}catch(e){}};if(window.pywebview&&window.pywebview.api)ini();else window.addEventListener('pywebviewready',ini)})();
 $('#bSave').onclick=save;$('#bUndo').onclick=undo;$('#bRedo').onclick=redo;
@@ -3560,7 +3818,7 @@ $('#pno').addEventListener('change',e=>{const n=Math.max(1,Math.min(S.pages.leng
 ['dragleave','drop'].forEach(ev=>$('#view').addEventListener(ev,()=>$('#dropbox').classList.remove('over')));
 // soltar um arquivo fora da área do documento nunca deve levar a janela para o arquivo (perderia as edições)
 ['dragover','drop'].forEach(ev=>window.addEventListener(ev,e=>{if(e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files'))e.preventDefault()}));
-window.addEventListener('beforeunload',e=>{try{if(GUIAS.lista.some((g,i)=>!g.home&&(i===GUIAS.ativa?sujaAtiva():g.snap&&sujaSnap(g.snap)))){e.preventDefault();e.returnValue=''}}catch(x){}});
+window.addEventListener('beforeunload',e=>{try{if(AJ.ler('aviso-sair','1')!=='0'&&GUIAS.lista.some((g,i)=>!g.home&&(i===GUIAS.ativa?sujaAtiva():g.snap&&sujaSnap(g.snap)))){e.preventDefault();e.returnValue=''}}catch(x){}});
 $('#view').addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length){e.preventDefault();const f=e.dataTransfer.files[0];f.recente=true;openFile(f)}});
 window.addEventListener('resize',()=>{if(S.fit&&S.doc){fitWidth();setScale(S.scale,true)}});
 document.addEventListener('keydown',e=>{
@@ -3633,8 +3891,8 @@ function comandosPaleta(){
     add('guia-'+i,'Guias abertas','Ir para: '+nome,{icone:'file',run:()=>trocarGuia(i),atalho:i<9?'Ctrl+'+(i+1):''})});
   if(GUIAS.lista.length||doc)add('fechar-guia','Guias','Fechar a guia atual',{atalho:'Ctrl+W',icone:'trash',run:()=>GUIAS.lista.length?fecharGuia(GUIAS.ativa):goHome()});
   if(GUIAS.fechadas.length)add('reabrir-guia','Guias','Reabrir a guia fechada',{atalho:'Ctrl+Shift+T',icone:'undo',run:()=>reabrirGuia(),desc:GUIAS.fechadas[GUIAS.fechadas.length-1].nome});
-  add('tema','Aparência','Alternar tema claro e escuro',{icone:'moon',run:()=>setTheme(document.documentElement.dataset.theme==='light'?'dark':'light'),chaves:'escuro claro noite'});
-  add('config','Aparência','Configurações',{icone:'gear',run:()=>$('#bConfig').click(),chaves:'preferencias guias dock'});
+  add('tema','Aparência','Alternar tema claro e escuro',{icone:'moon',run:()=>trocarTema(),chaves:'escuro claro noite'});
+  add('config','Aparência','Configurações',{icone:'gear',run:()=>$('#bConfig').click(),chaves:'preferencias ajustes guias dock tema cor acento movimento zoom privacidade limpar recentes impressora'});
   add('atalhos','Ajuda','Atalhos de teclado',{atalho:'',icone:'info',run:()=>mostrarAtalhos(),chaves:'teclas ctrl'});
   return L;
 }
@@ -4359,8 +4617,9 @@ const kRecInfo=r=>r?'recuperar:'+r:'recuperar',kRecBytes=r=>r?'recuperar-bytes:'
 let filaRec=Promise.resolve();
 const naFilaRec=f=>(filaRec=filaRec.then(f,f)); // um de cada vez: a lista de cópias é lida e regravada
 async function ridsRec(){let l=[];try{l=await BANCO.get('recuperar-ids')}catch(e){}return Array.isArray(l)?l:[]}
-async function salvarRecuperacao(){
+async function salvarRecuperacao(forcar){
   if(!S.doc||S.recuperando||!S.rid)return;
+  if(!forcar&&AJ.ler('recuperar-auto','1')==='0')return; // desligada em Configurações
   const rid=S.rid,bytes=S.bytes,nome=S.name,objs=S.objs,form={...S.form},flatten=!!S.flatten; // foto do momento: a guia pode mudar enquanto grava
   if(!(dirty()||S.hi>0)||chaveEdicao()===S.recSalvo)return; // nada novo desde que abriu ou salvou
   return naFilaRec(async()=>{try{
@@ -4463,12 +4722,15 @@ $('#bSobre').onclick=()=>{
 /* ================= aviso de versão nova (app do Windows e Android) ================= */
 // o site publica versao.json; se a versão de lá for maior que a instalada, oferece atualizar
 function versaoMaior(a,b){const x=String(a).split('.').map(Number),y=String(b).split('.').map(Number);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0}return false}
-async function verAtualizacao(){
+async function verAtualizacao(manual){ // manual = clicou em "Verificar agora" nas Configurações: sempre responde; ao abrir o app fica quieto
   const android=!!window.AndroidApp,windows=!!(window.pywebview&&pywebview.api&&pywebview.api.atualizar);
-  const atual=android?window.APP_VERSAO:S.versaoApp;if(!atual||!(android||windows)||S.loja)return; // pela Loja quem atualiza é a Loja
-  let j;try{const r=await fetch('https://editorpdf.github.io/versao.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;j=await r.json()}catch(e){return} // sem internet: fica quieto
-  const nova=j&&j[android?'android':'windows'];if(!nova||!nova.versao||!nova.url||!versaoMaior(nova.versao,atual))return;
-  try{if(localStorage.getItem('editorpdf-pular-versao')===nova.versao)return}catch(e){}
+  const atual=android?window.APP_VERSAO:S.versaoApp;
+  if(S.loja){if(manual===true)toast.info('Instalado pela Microsoft Store: as atualizações chegam pela própria Loja.');return} // pela Loja quem atualiza é a Loja
+  if(!atual||!(android||windows)){if(manual===true)toast.info('A atualização automática não vale neste aparelho.');return}
+  let j;try{const r=await fetch('https://editorpdf.github.io/versao.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('http');j=await r.json()}catch(e){if(manual===true)toast.aviso('Não foi possível verificar agora. Confira a internet e tente de novo.');return} // sem internet: ao abrir fica quieto
+  const nova=j&&j[android?'android':'windows'];if(!nova||!nova.versao||!nova.url||!versaoMaior(nova.versao,atual)){if(manual===true)toast.ok('Você está com a versão mais recente ('+atual+').');return}
+  try{if(manual!==true&&localStorage.getItem('editorpdf-pular-versao')===nova.versao)return}catch(e){}
+  if(document.querySelector('.aviso-versao'))return;
   const el=document.createElement('div');el.className='aviso-versao';el.setAttribute('role','status');
   el.innerHTML=`<b>Nova versão ${esc(nova.versao)} disponível</b><span class="av-sub">Você está com a ${esc(atual)}.</span>
     ${(nova.novidades||[]).length?`<ul>${nova.novidades.slice(0,5).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
@@ -4481,7 +4743,7 @@ async function verAtualizacao(){
     if(android){AndroidApp.abrirLink(nova.url);el.remove();toast('Baixando no navegador. Quando terminar, abra o arquivo e toque em Atualizar.');return}
     if(S.doc&&chaveEdicao()!==S.recSalvo&&(dirty()||S.hi>0)&&!confirm('Para atualizar, o app vai fechar. As edições não salvas ficam guardadas e você pode recuperar depois. Continuar?'))return;
     try{const lt=pywebview.api.lote_em_andamento?await pywebview.api.lote_em_andamento():null;if(lt&&lt.ativo){toast.aviso('Há uma impressão em andamento. Atualize quando ela terminar, para não perder os arquivos que faltam.');return}}catch(_){}
-    await salvarRecuperacao();el.remove();busy(true,'Baixando a atualização…');
+    await salvarRecuperacao(true);el.remove();busy(true,'Baixando a atualização…');
     try{const r=await pywebview.api.atualizar(nova.url);if(r&&r.erro){busy(false);toast(r.erro,true)}else busy(true,'Abrindo o instalador…')}
     catch(err){busy(false);toast('Não foi possível atualizar: '+(err&&err.message||err),true)}
   });
