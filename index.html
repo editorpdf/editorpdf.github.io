@@ -984,12 +984,12 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 /* celular: luz azul que circula a tela, desce até a Dynamic Island, se divide, dá a volta nela e sobe de novo (SVG montado em aplicarVisualCelular) */
 #luzBorda{display:none}
 @media(max-width:700px){
-  #luzBorda{display:block;position:fixed;left:0;top:0;z-index:310;pointer-events:none;overflow:visible;filter:drop-shadow(0 0 4px rgba(60,150,255,.9)) drop-shadow(0 0 10px rgba(40,110,255,.45))}
+  #luzBorda{display:block;position:fixed;left:0;top:0;z-index:310;pointer-events:none;overflow:visible;filter:drop-shadow(0 0 3px rgba(60,150,255,.55)) drop-shadow(0 0 7px rgba(40,110,255,.25))}
   #luzBorda path{fill:none;stroke-linecap:butt;stroke-linejoin:round}
-  #luzBorda .trilho{stroke:rgba(80,150,255,.16);stroke-width:3}
-  #luzBorda.parado .trilho{stroke:rgba(80,150,255,.7)}
-  #luzBorda .cauda{stroke:#2f7bff;stroke-width:3;opacity:.45}
-  #luzBorda .cabeca{stroke:#bfe6ff;stroke-width:3.4}
+  #luzBorda .trilho{stroke:rgba(80,150,255,.12);stroke-width:2.6}
+  #luzBorda.parado .trilho{stroke:rgba(80,150,255,.55)}
+  #luzBorda .cauda{stroke:#2f7bff;stroke-width:2.6;opacity:.38}
+  #luzBorda .cabeca{stroke:#8cc8ff;stroke-width:2.8;opacity:.85}
 }
 .cfg-sel{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px;font-size:13px}.cfg-sel select{max-width:100%}
 @media(max-width:700px){.chk.cfg:has(#cfgDock){display:none}} /* o efeito de ampliar com o mouse não existe em tela de toque */
