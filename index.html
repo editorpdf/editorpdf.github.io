@@ -981,6 +981,29 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .app:has(.main.is-home){grid-template-rows:calc(52px + var(--sat)) auto minmax(0,1fr) 0}
   .app:has(.main.is-home) .status{display:none}
 }
+/* celular: contorno azul que gira pela borda da tela (não pega cliques; fica parado com "reduzir movimento" ou sem-mov) */
+@property --giro{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes giroBorda{to{--giro:360deg}}
+@media(max-width:700px){
+  body::after{content:"";position:fixed;inset:0;z-index:310;pointer-events:none;border-radius:46px;padding:3px;
+    background:conic-gradient(from var(--giro),transparent 0 50%,#1565ff 66%,#4fb4ff 80%,#7fd0ff 88%,#1565ff 96%,transparent 100%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask-composite:exclude;
+    filter:drop-shadow(0 0 5px rgba(60,150,255,.85)) drop-shadow(0 0 12px rgba(40,110,255,.45));
+    animation:giroBorda 5.5s linear infinite}
+  html.sem-mov body::after{animation:none}
+  /* raio do canto da tela por modelo (iPhone XS em diante); sem entalhe (iPhone SE, 8) o canto é quase reto */
+  body::after{--raio:8px}
+  html.tem-entalhe body::after{--raio:47px;border-radius:var(--raio)}
+  @media(width:375px) and (height:812px){html.tem-entalhe body::after{--raio:39px}}   /* X, XS, 11 Pro, 12/13 mini */
+  @media(width:414px){html.tem-entalhe body::after{--raio:41px}}                      /* XR, 11, XS Max, 11 Pro Max */
+  @media(width:390px){html.tem-entalhe body::after{--raio:47px}}                      /* 12, 13, 14, 16e */
+  @media(width:428px){html.tem-entalhe body::after{--raio:53px}}                      /* 12/13 Pro Max, 14 Plus */
+  @media(width:393px),(width:430px){html.tem-entalhe body::after{--raio:55px}}        /* 14 Pro, 15, 15 Plus, 15 Pro Max */
+  @media(width:402px),(width:440px){html.tem-entalhe body::after{--raio:62px}}        /* 16 Pro, 16 Pro Max, 17 */
+  body::after{border-radius:var(--raio)}
+}
+@media(max-width:700px) and (prefers-reduced-motion:reduce){body::after{animation:none}}
 
 /* cartão flutuante de opções (no lugar do painel lateral) */
 .main .right.flutua{display:block!important;position:fixed;right:16px;bottom:44px;left:auto;top:auto;width:264px;max-height:min(58vh,520px);overflow:auto;z-index:60;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:12px 14px 14px}
@@ -4413,6 +4436,8 @@ async function verAtualizacao(){
   });
 }
 setTimeout(verAtualizacao,6000);
+// celulares com entalhe/Dynamic Island (área segura no topo): liga o raio de canto do contorno azul que gira na borda
+(()=>{try{const p=document.createElement('div');p.style.cssText='position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.appendChild(p);const v=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove();if(v>20)document.documentElement.classList.add('tem-entalhe')}catch(e){}})();
 // iPhone/iPad (Safari): ensina a instalar na Tela de Início, onde o app abre em tela cheia, sem a barra do navegador
 (()=>{
   const ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
