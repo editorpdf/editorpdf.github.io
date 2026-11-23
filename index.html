@@ -990,6 +990,8 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   #luzBorda.parado .trilho{stroke:rgba(80,150,255,.55)}
   #luzBorda .cauda{stroke:#2f7bff;stroke-width:2.6;opacity:.38}
   #luzBorda .cabeca{stroke:#8cc8ff;stroke-width:2.8;opacity:.85}
+  #luzBorda .trilho.ilha{stroke:rgba(80,150,255,.3);stroke-width:3.2}
+  #luzBorda .ilha{stroke-linecap:round}
   #luzBorda .ilha.cauda{stroke:#3d86ff;stroke-width:3.2;opacity:.75}  /* na ilha a luz é um pouco mais forte: a ilha de verdade cobre parte do traço */
   #luzBorda .ilha.cabeca{stroke:#a9d6ff;stroke-width:3.4;opacity:1}
 }
@@ -4448,10 +4450,12 @@ const MODELOS_CEL=[
   {id:'16p',nome:'iPhone 16 Pro, 17, 17 Pro',raio:62,ilha:{w:126,h:37,top:14}},
   {id:'16pm',nome:'iPhone 16 Pro Max, 17 Pro Max',raio:62,ilha:{w:126,h:37,top:14}},
   {id:'se',nome:'iPhone SE, 8 (sem entalhe)',raio:8},
-  {id:'s24u',nome:'Galaxy S24 Ultra (furo da câmera)',raio:22,ilha:{w:18,h:18,top:11}}
+  {id:'s24u',nome:'Galaxy S24 Ultra (furo da câmera)',raio:22,ilha:{w:18,h:18,top:11}},
+  {id:'a10',nome:'Galaxy A10 (entalhe em gota)',raio:28,ilha:{w:36,h:24,top:0,gota:true,folga:1.5}}
 ];
-let _modeloAuto=null; // o Android diz o modelo (Chrome/WebView): o Galaxy S24 Ultra é reconhecido sozinho
-try{if(/Android/i.test(navigator.userAgent)&&navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues)navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{if(/SM-S928/i.test((v&&v.model)||'')){_modeloAuto='s24u';aplicarVisualCelular()}}).catch(()=>{})}catch(e){}
+const modeloAndroid=txt=>/SM-S928/i.test(txt||'')?'s24u':/SM-A105/i.test(txt||'')?'a10':null; // o Android diz o modelo (Chrome/WebView)
+let _modeloAuto=modeloAndroid(navigator.userAgent);
+try{if(/Android/i.test(navigator.userAgent)&&navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues)navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{const m=modeloAndroid(v&&v.model);if(m){_modeloAuto=m;aplicarVisualCelular()}}).catch(()=>{})}catch(e){}
 const celPref=()=>{const pad={borda:true,ilha:true,modelo:'auto'};try{return Object.assign(pad,JSON.parse(localStorage.getItem('editorpdf-celular')||'{}'))}catch(e){return pad}};
 const celSalvar=p=>{try{localStorage.setItem('editorpdf-celular',JSON.stringify(p))}catch(e){}};
 let _satCel=null;
@@ -4467,24 +4471,33 @@ function luzMontar(W,H,r,ilha,comBorda,comIlha,animar){
   // volta completa na borda da tela, no sentido horário, saindo do meio do topo; "ini" é o ponto de partida (o resto do traço é igual)
   const resto='H'+f(W-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins)+' '+f(ins+R)+'V'+f(H-ins-R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(W-ins-R)+' '+f(H-ins)+'H'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+ins+' '+f(H-ins-R)+'V'+f(ins+R)+'A'+f(R)+' '+f(R)+' 0 0 1 '+f(ins+R)+' '+ins+'H'+f(cx);
   const tela='M'+f(cx)+' '+ins+resto;
-  const fases=[],trilhos=[];
-  const temIlha=!!(comIlha&&ilha);
-  if(comBorda)trilhos.push(tela);
+  const fases=[],trilhos=[],trilhosIlha=new Set();
+  const temIlha=!!(comIlha&&ilha),gota=temIlha&&!!ilha.gota;
   let cw=null,ccw=null,y0=0;
-  if(temIlha){
-    const g=1.5+(ilha.folga==null?2.5:ilha.folga),x0=cx-ilha.w/2-g,x1=cx+ilha.w/2+g,y1=ilha.top+ilha.h+g,rad=(y1-(ilha.top-g))/2;y0=ilha.top-g;
-    cw='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx);
-    ccw='M'+f(cx)+' '+f(y0)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x0+rad)+' '+f(y1)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x1-rad)+' '+f(y0)+'H'+f(cx);
-    trilhos.push(cw);
+  if(gota){
+    // entalhe em gota (preso na borda de cima, ex.: Galaxy A10): a luz corre a borda, desce pelo lado do entalhe, contorna e segue (um laço só)
+    const g=1.5+(ilha.folga==null?1.5:ilha.folga),xl=cx-ilha.w/2-g,xr=cx+ilha.w/2+g,rb=(xr-xl)/2,ys=ilha.h+g-rb;
+    const U='V'+f(ys)+'A'+f(rb)+' '+f(rb)+' 0 0 0 '+f(xr)+' '+f(ys)+'V'+ins;
+    const laco='M'+f(xr)+' '+ins+resto.slice(0,resto.lastIndexOf('H'))+'H'+f(xl)+U;
+    const so='M'+f(xl)+' '+ins+U;
+    const d=comBorda?laco:so;trilhos.push(d);trilhosIlha.add(d);fases.push({ds:[d],v:comBorda?420:200,ilha:true});
+  }else{
+    if(comBorda)trilhos.push(tela);
+    if(temIlha){
+      const g=1.5+(ilha.folga==null?1:ilha.folga),x0=cx-ilha.w/2-g,x1=cx+ilha.w/2+g,y1=ilha.top+ilha.h+g,rad=(y1-(ilha.top-g))/2;y0=ilha.top-g;
+      cw='M'+f(cx)+' '+f(y0)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x1-rad)+' '+f(y1)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 1 '+f(x0+rad)+' '+f(y0)+'H'+f(cx);
+      ccw='M'+f(cx)+' '+f(y0)+'H'+f(x0+rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x0+rad)+' '+f(y1)+'H'+f(x1-rad)+'A'+f(rad)+' '+f(rad)+' 0 0 0 '+f(x1-rad)+' '+f(y0)+'H'+f(cx);
+      trilhos.push(cw);trilhosIlha.add(cw);
+    }
+    if(comBorda&&temIlha){
+      // um traço só: sai da ilha, sobe até a borda, dá a volta na tela e desce de novo até a ilha; ali se divide em duas
+      fases.push({ds:['M'+f(cx)+' '+f(y0)+'V'+ins+resto+'V'+f(y0)],v:460});
+      fases.push({ds:[cw,ccw],v:210,ilha:true});
+    }else if(comBorda)fases.push({ds:[tela],v:460});
+    else if(temIlha)fases.push({ds:[cw,ccw],v:210,ilha:true});
   }
-  if(comBorda&&temIlha){
-    // um traço só: sai da ilha, sobe até a borda, dá a volta na tela e desce de novo até a ilha; ali se divide em duas
-    fases.push({ds:['M'+f(cx)+' '+f(y0)+'V'+ins+resto+'V'+f(y0)],v:460});
-    fases.push({ds:[cw,ccw],v:210,ilha:true});
-  }else if(comBorda)fases.push({ds:[tela],v:460});
-  else if(temIlha)fases.push({ds:[cw,ccw],v:210,ilha:true});
-  trilhos.forEach(d=>svg.appendChild(svgEl('path',{d,class:'trilho'})));
-  if(comBorda&&temIlha)svg.appendChild(svgEl('path',{d:'M'+f(cx)+' '+f(y0)+'V'+ins,class:'trilho'}));
+  trilhos.forEach(d=>svg.appendChild(svgEl('path',{d,class:'trilho'+(trilhosIlha.has(d)?' ilha':'')})));
+  if(comBorda&&temIlha&&!gota)svg.appendChild(svgEl('path',{d:'M'+f(cx)+' '+f(y0)+'V'+ins,class:'trilho'}));
   document.body.appendChild(svg);
   if(!animar||!fases.length){svg.classList.add('parado');return svg}
   const CAUDA=110,lista=[];let t=0;
