@@ -1081,8 +1081,8 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 }
 /* ===== iPhone: Liquid Glass (só no celular com a classe "ios"; computador e Android ficam como estão) ===== */
 html.ios:not(.standalone){--sat:0px;--sab:0px}
-html.ios{--v-fundo:rgba(255,255,255,.07);--v-forte:rgba(16,28,60,.62);--v-borda:rgba(255,255,255,.2);--v-brilho:rgba(255,255,255,.4);--v-sombra:0 12px 32px rgba(0,6,28,.5),0 2px 8px rgba(0,6,28,.3);--v-vidro:blur(22px) saturate(190%)}
-html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,255,255,.78);--v-borda:rgba(255,255,255,.9);--v-brilho:rgba(255,255,255,1);--v-sombra:0 12px 28px rgba(50,80,150,.22),0 2px 8px rgba(50,80,150,.12)}
+html.ios,html.vidro{--v-fundo:rgba(255,255,255,.07);--v-forte:rgba(16,28,60,.62);--v-borda:rgba(255,255,255,.2);--v-brilho:rgba(255,255,255,.4);--v-sombra:0 12px 32px rgba(0,6,28,.5),0 2px 8px rgba(0,6,28,.3);--v-vidro:blur(22px) saturate(190%)}
+html.ios[data-theme="light"],html.vidro[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,255,255,.78);--v-borda:rgba(255,255,255,.9);--v-brilho:rgba(255,255,255,1);--v-sombra:0 12px 28px rgba(50,80,150,.22),0 2px 8px rgba(50,80,150,.12)}
 @media(max-width:700px){
   html.ios body{background:radial-gradient(120% 55% at 12% -5%,rgba(40,110,255,.30),transparent 62%),radial-gradient(90% 45% at 100% 28%,rgba(125,90,255,.20),transparent 60%),radial-gradient(100% 50% at 35% 105%,rgba(0,190,255,.18),transparent 62%),var(--bg)}
   html.ios[data-theme="light"] body{background:radial-gradient(120% 55% at 12% -5%,rgba(60,130,255,.22),transparent 62%),radial-gradient(90% 45% at 100% 28%,rgba(160,120,255,.16),transparent 60%),radial-gradient(100% 50% at 35% 105%,rgba(40,200,255,.16),transparent 62%),var(--bg)}
@@ -1091,7 +1091,9 @@ html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,2
   /* barra de cima: cápsula de vidro */
   html.ios{--v-topo:max(6px,calc(var(--sat) + 1px))} /* a cápsula fica logo abaixo da ilha/entalhe */
   html.ios .app{grid-template-rows:calc(var(--v-topo) + 58px) auto minmax(0,1fr) calc(28px + var(--sab))}
-  html.ios .app>.top{margin:var(--v-topo) 10px 0;padding:0 8px;height:50px;align-self:start;border-radius:26px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.06)}
+  /* o vidro fica numa camada atrás (::before): se a barra em si tivesse desfoque, ela viraria a "tela" dos menus fixos que moram dentro dela (Exportar) e eles abririam deslocados */
+  html.ios .app>.top{margin:var(--v-topo) 10px 0;padding:0 8px;height:50px;align-self:start;border-radius:26px;background:transparent;border:0;box-shadow:none}
+  html.ios .app>.top::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.06)}
   html.ios .app>.top::after{display:none}
   html.ios .top .btn{background:transparent;border:0;box-shadow:none;border-radius:16px}
   html.ios .top .btn:active{background:rgba(255,255,255,.16);transform:scale(.94)}
@@ -1123,6 +1125,53 @@ html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,2
   html.ios .modal-bg{background:rgba(2,6,20,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
   html.ios .modal,html.ios .modal.wide,html.ios .modal.tmodal{background:var(--v-forte);-webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%);border:1px solid var(--v-borda);border-bottom:0;border-radius:32px 32px 0 0;box-shadow:0 -12px 44px rgba(0,6,28,.45),inset 0 1px 0 var(--v-brilho)}
   html.ios .menu,html.ios .toast,html.ios #paleta .pl,html.ios #fmt,html.ios .findbar,html.ios .right.flutua,html.ios #dicaIos,html.ios .aviso-versao{background:var(--v-forte);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);border-radius:24px;box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)}
+}
+/* ===== Computador (app do Windows): Liquid Glass — classe html.vidro (Configurações > Aparência liga e desliga) ===== */
+html.vidro{--v-solido:rgba(15,24,52,.96)}
+html.vidro[data-theme="light"]{--v-solido:rgba(250,252,255,.97)}
+@media(min-width:701px){
+  html.vidro body{background:radial-gradient(90% 55% at 8% -8%,rgba(40,110,255,.26),transparent 62%),radial-gradient(70% 50% at 100% 25%,rgba(125,90,255,.18),transparent 60%),radial-gradient(80% 55% at 40% 108%,rgba(0,190,255,.14),transparent 62%),var(--bg)}
+  html.vidro[data-theme="light"] body{background:radial-gradient(90% 55% at 8% -8%,rgba(60,130,255,.20),transparent 62%),radial-gradient(70% 50% at 100% 25%,rgba(160,120,255,.15),transparent 60%),radial-gradient(80% 55% at 40% 108%,rgba(40,200,255,.14),transparent 62%),var(--bg)}
+  html.vidro .app,html.vidro .main{background:transparent}
+  /* área do documento transparente (o fundo aparece); as páginas do PDF continuam brancas e nítidas */
+  html.vidro .main .view,html.vidro[data-theme="dark"] .main .view{background:radial-gradient(rgba(120,165,255,.09) 1px,transparent 1.3px) 0 0/24px 24px;border:0;border-radius:0}
+  html.vidro[data-theme="light"] .main .view{background:radial-gradient(rgba(14,36,96,.10) 1px,transparent 1.3px) 0 0/24px 24px}
+  /* barra de cima: cápsula de vidro flutuante */
+  html.vidro .app{grid-template-rows:calc(66px + var(--sat)) auto minmax(0,1fr) calc(28px + var(--sab))}
+  html.vidro .app>.top{margin:8px 12px 6px;padding:var(--sat) 10px 0;border-radius:24px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.05)}
+  html.vidro .app>.top::after{display:none}
+  html.vidro .menu{background:var(--v-solido);border:1px solid var(--v-borda);border-radius:18px;box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)} /* o menu mora dentro da barra de vidro: sem desfoque próprio, fundo firme */
+  html.vidro .btn.primary,html.vidro #bSave{background:var(--accent);background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 78%,#fff),var(--accent));border:1px solid rgba(255,255,255,.3);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 18px rgba(20,100,235,.28)}
+  /* guias */
+  html.vidro .guias{background:transparent;border:0;padding:0 14px}
+  html.vidro .guia{border-radius:14px}
+  html.vidro .guia[aria-selected=true]{background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border-color:var(--v-borda);box-shadow:inset 0 1px 0 var(--v-brilho)}
+  /* ferramentas da esquerda e miniaturas: painéis de vidro flutuantes */
+  html.vidro .main:not(.is-home):not(.no-rail){--rw:96px}
+  html.vidro .main:not(.is-home):not(.no-thumbs){--tw:222px}
+  html.vidro .rail{margin:4px 4px 10px 12px;border:1px solid var(--v-borda);border-radius:26px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)}
+  html.vidro .thumbs{margin:4px 6px 10px 4px;border:1px solid var(--v-borda);border-radius:24px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho);overflow:hidden}
+  html.vidro .tool{border-radius:18px;color:#dbe6ff}
+  html.vidro[data-theme="light"] .tool{color:#1c2c55}
+  html.vidro .tool[aria-pressed=true]{background:rgba(90,160,255,.28);box-shadow:inset 0 1px 0 var(--v-brilho),0 0 0 1px rgba(130,185,255,.4)}
+  html.vidro .tool[aria-pressed=true]::before{display:none}
+  html.vidro .rsep{background:var(--v-borda)}
+  html.vidro .status{background:transparent;border:0}
+  /* o que flutua sobre as páginas: fundo firme, sem desfoque (as páginas rolam por trás) */
+  html.vidro .right,html.vidro #fmt,html.vidro .findbar{background:var(--v-solido);border:1px solid var(--v-borda);border-radius:22px;box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)}
+  /* avisos, busca de comandos e janelas */
+  html.vidro .toast{background:var(--v-forte);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);border-radius:20px;box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)}
+  html.vidro #paleta .pl{background:var(--v-solido);border:1px solid var(--v-borda);border-radius:26px;box-shadow:0 24px 70px rgba(0,6,28,.5),inset 0 1px 0 var(--v-brilho)} /* a camada da paleta já desfoca o fundo */
+  html.vidro .modal-bg{background:rgba(2,6,20,.35)}
+  html.vidro .modal{background:var(--v-forte);-webkit-backdrop-filter:blur(30px) saturate(190%);backdrop-filter:blur(30px) saturate(190%);border:1px solid var(--v-borda);border-radius:28px;box-shadow:0 24px 70px rgba(0,6,28,.5),inset 0 1px 0 var(--v-brilho)}
+  html.vidro .modal.mesa{background:var(--v-solido);-webkit-backdrop-filter:none;backdrop-filter:none} /* a Mesa ocupa a tela: sem desfoque, para não pesar */
+  /* cartões da tela inicial: só os 6 principais desfocam; os da lista de ferramentas ficam translúcidos */
+  html.vidro .card{background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);border-radius:20px;box-shadow:0 6px 20px rgba(0,6,28,.22),inset 0 1px 0 var(--v-brilho)}
+  html.vidro .tcard,html.vidro .dropbox{background:var(--v-fundo);border:1px solid var(--v-borda);border-radius:18px;box-shadow:0 4px 14px rgba(0,6,28,.16),inset 0 1px 0 var(--v-brilho)}
+  /* botões e campos */
+  html.vidro .btn:not(.ghost):not(.primary):not(.icon){background:var(--v-fundo);border:1px solid var(--v-borda);border-radius:12px;box-shadow:inset 0 1px 0 var(--v-brilho)}
+  html.vidro input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),html.vidro select,html.vidro textarea{background:rgba(255,255,255,.06);border:1px solid var(--v-borda);border-radius:12px}
+  html.vidro[data-theme="light"] input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),html.vidro[data-theme="light"] select,html.vidro[data-theme="light"] textarea{background:rgba(255,255,255,.7)}
 }
 </style>
 </head>
@@ -3598,7 +3647,12 @@ try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{if(
 const trocarTema=()=>{AJ.gravar('tema-auto','0');setTheme(document.documentElement.dataset.theme==='dark'?'light':'dark')};
 $('#bTheme').onclick=trocarTema;
 // ao abrir o app: tema (automático ou o último escolhido) e "reduzir movimento"
+// Liquid Glass no computador: ligado por padrão só no app do Windows (sem APP_WEB/APP_CELULAR); o dono liga/desliga em Configurações > Aparência
+const vidroPadrao=()=>!window.APP_WEB&&!window.APP_CELULAR;
+const vidroLigado=()=>{const v=AJ.ler('vidro',null);return v==null?vidroPadrao():v==='1'};
+function aplicarVidro(){document.documentElement.classList.toggle('vidro',vidroLigado())}
 function aplicarPrefsIniciais(){
+  aplicarVidro();
   let t=AJ.ler('tema',null);if(!t)t='dark';if(temaAuto())t=prefereEscuro()?'dark':'light';
   setTheme(t);if(AJ.ler('sem-mov','0')==='1')document.documentElement.classList.add('sem-mov');
 }
@@ -3644,6 +3698,9 @@ function abrirConfig(secaoInicial){
       <b class="cfg-rot" id="cfgAcentoRot">Cor de destaque</b>
       <div class="cfg-cores" role="radiogroup" aria-labelledby="cfgAcentoRot">${Object.entries(ACENTOS).map(([id,a])=>`<label class="cfg-cor" title="${a.nome}"><input type="radio" name="cfgAcento" value="${id}" aria-label="${a.nome}"${acento===id?' checked':''}><span style="--c:${a.cor}"></span></label>`).join('')}</div>
     </div>
+    ${movel?'':`<div class="cfg-grupo"><h4>Vidro</h4>
+      ${chk('cfgVidro','Vidro e transparências','Barras, painéis, janelas e menus com efeito de vidro (Liquid Glass). Desligar deixa o app mais leve e ajuda computadores mais fracos.',vidroLigado())}
+    </div>`}
     <div class="cfg-grupo"><h4>Movimento</h4>
       ${chk('cfgSemMov','Reduzir movimento','Desliga as animações do app. Também fica assim sozinho se o aparelho pedir "reduzir movimento".',AJ.ler('sem-mov','0')==='1')}
       ${chk('cfgDock','Ampliar ao passar o mouse','Os ícones das barras e dos menus crescem perto do mouse, como na Dock do Mac.',dockLigado())}
@@ -3729,6 +3786,7 @@ function abrirConfig(secaoInicial){
   // ---- Aparência ----
   $('#cfgTema',bg).onchange=e=>{const v=e.target.value;AJ.gravar('tema-auto',v==='auto'?'1':'0');if(v==='auto')aplicarTemaAuto();else setTheme(v)};
   $$('input[name=cfgAcento]',bg).forEach(r=>r.onchange=()=>{AJ.gravar('acento',r.value);aplicarAcento()});
+  if($('#cfgVidro',bg))$('#cfgVidro',bg).onchange=e=>{AJ.gravar('vidro',e.target.checked?'1':'0');aplicarVidro();toast(e.target.checked?'Vidro ligado.':'Vidro desligado: o app fica mais leve.')};
   $('#cfgSemMov',bg).onchange=e=>{AJ.gravar('sem-mov',e.target.checked?'1':'0');document.documentElement.classList.toggle('sem-mov',e.target.checked);toast(e.target.checked?'Movimento reduzido.':'Animações ligadas.')};
   $('#cfgDock',bg).onchange=e=>{AJ.gravar('dock',e.target.checked?'1':'0');toast(e.target.checked?'Efeito ligado.':'Efeito desligado.')};
   if($('#cfgCel',bg)){

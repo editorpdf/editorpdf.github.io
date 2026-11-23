@@ -1,6 +1,6 @@
 // Guarda os arquivos do editor no aparelho: depois do primeiro uso, o site abre e funciona sem internet.
 // Os PDFs nunca passam por aqui (são processados na própria página e não são enviados).
-const VERSAO = '20261123-085542';
+const VERSAO = '20261123-090326';
 self.addEventListener('message', e => { if (e.data === 'pular-espera') self.skipWaiting(); });
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(caches.open(VERSAO).then(c => c.addAll(['./', './index.html', './motor.js', './manifest.webmanifest', './novidades.json'].map(u => new Request(u, { cache: 'reload' }))).catch(() => c.add('./index.html')))); });
 self.addEventListener('activate', e => {
