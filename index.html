@@ -980,6 +980,8 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .home{padding:20px 16px calc(24px + var(--sab))}
   .app:has(.main.is-home){grid-template-rows:calc(52px + var(--sat)) auto minmax(0,1fr) 0}
   .app:has(.main.is-home) .status{display:none}
+  /* sem emenda entre a linha da barra de cima e a área principal: nada de canto arredondado, borda do lado nem linha dupla */
+  .app>.main .view,.app>.main.no-thumbs .view{border-radius:0;border-left:0;border-top:0}
 }
 /* celular: luz azul que circula a tela, desce até a Dynamic Island, se divide, dá a volta nela e sobe de novo (SVG montado em aplicarVisualCelular) */
 #luzBorda{display:none}
