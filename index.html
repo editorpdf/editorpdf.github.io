@@ -1184,8 +1184,8 @@ html.vidro[data-theme="light"]{--v-solido:rgba(250,252,255,.97)}
 html{--saude-cor:#30e060;--saude-brilho:rgba(48,224,96,.95)}
 html[data-saude="erro"]{--saude-cor:#ff3b30;--saude-brilho:rgba(255,59,48,.95)}
 #ilhaStatus{position:fixed;left:0;top:0;z-index:312;pointer-events:none;overflow:visible}
-#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:4.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--saude-brilho)) drop-shadow(0 0 9px var(--saude-brilho));animation:saudePisca 1.8s ease-in-out infinite}
-html[data-saude="erro"] #ilhaStatus path{stroke-width:5;animation:saudePiscaErro .7s ease-in-out infinite}
+#ilhaStatus path{fill:none;stroke:var(--saude-cor);stroke-width:4.6;stroke-linejoin:round;filter:drop-shadow(0 0 3px var(--saude-brilho)) drop-shadow(0 0 9px var(--saude-brilho));animation:saudePisca 3.6s ease-in-out infinite}
+html[data-saude="erro"] #ilhaStatus path{stroke-width:5;animation:saudePiscaErro 1.2s ease-in-out infinite}
 @keyframes saudePisca{0%,38%{opacity:1}46%,88%{opacity:.4}96%,100%{opacity:1}} /* pisca: aceso, apaga quase todo e volta */
 @keyframes saudePiscaErro{0%,40%{opacity:1}50%,90%{opacity:.4}100%{opacity:1}}
 #ilhaStatus .nucleo{stroke:#e4ffec;stroke-width:1.6;filter:none}
