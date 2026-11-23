@@ -4848,7 +4848,7 @@ const MODELOS_CEL=[
 const modeloAndroid=txt=>/SM-S928/i.test(txt||'')?'s24u':/SM-A105/i.test(txt||'')?'a10':null; // o Android diz o modelo (Chrome/WebView)
 let _modeloAuto=modeloAndroid(navigator.userAgent);
 try{if(/Android/i.test(navigator.userAgent)&&navigator.userAgentData&&navigator.userAgentData.getHighEntropyValues)navigator.userAgentData.getHighEntropyValues(['model']).then(v=>{const m=modeloAndroid(v&&v.model);if(m){_modeloAuto=m;aplicarVisualCelular()}}).catch(()=>{})}catch(e){}
-const celPref=()=>{const pad={borda:true,ilha:true,modelo:'auto'};try{return Object.assign(pad,JSON.parse(localStorage.getItem('editorpdf-celular')||'{}'))}catch(e){return pad}};
+const celPref=()=>{const pad={borda:false,ilha:false,modelo:'auto'}; /* a luz azul vem DESLIGADA; quem quiser liga em Configurações > Aparência */try{return Object.assign(pad,JSON.parse(localStorage.getItem('editorpdf-celular')||'{}'))}catch(e){return pad}};
 const celSalvar=p=>{try{localStorage.setItem('editorpdf-celular',JSON.stringify(p))}catch(e){}};
 let _satCel=null;
 function areaSeguraTopo(){if(_satCel!=null)return _satCel;try{const p=document.createElement('div');p.style.cssText='position:fixed;top:0;left:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';document.body.appendChild(p);_satCel=parseFloat(getComputedStyle(p).paddingTop)||0;p.remove()}catch(e){_satCel=0}return _satCel}
