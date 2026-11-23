@@ -1040,6 +1040,7 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .main.is-home .thumbs{display:none!important}
 }
 /* ===== iPhone: Liquid Glass (só no celular com a classe "ios"; computador e Android ficam como estão) ===== */
+html.ios:not(.standalone){--sat:0px;--sab:0px}
 html.ios{--v-fundo:rgba(255,255,255,.07);--v-forte:rgba(16,28,60,.62);--v-borda:rgba(255,255,255,.2);--v-brilho:rgba(255,255,255,.4);--v-sombra:0 12px 32px rgba(0,6,28,.5),0 2px 8px rgba(0,6,28,.3);--v-vidro:blur(22px) saturate(190%)}
 html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,255,255,.78);--v-borda:rgba(255,255,255,.9);--v-brilho:rgba(255,255,255,1);--v-sombra:0 12px 28px rgba(50,80,150,.22),0 2px 8px rgba(50,80,150,.12)}
 @media(max-width:700px){
@@ -4488,6 +4489,8 @@ async function verAtualizacao(){
 setTimeout(verAtualizacao,6000);
 const ehIos=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 try{if(ehIos())document.documentElement.classList.add('ios')}catch(e){} // liga o visual Liquid Glass (só vale em tela de celular)
+// app da Tela de Início ocupa a tela toda; numa aba do Safari a página começa ABAIXO da barra de status (e acaba acima da barra do Safari)
+try{if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)document.documentElement.classList.add('standalone')}catch(e){}
 // ---- visual do celular: contorno azul na borda da tela e anel na Dynamic Island (Configurações escolhe o modelo) ----
 const MODELOS_CEL=[
   {id:'auto',nome:'Automático (o app detecta)'},
@@ -4576,12 +4579,13 @@ function aplicarVisualCelular(){
   const h=document.documentElement,p=celPref(),sat=areaSeguraTopo();
   const m=p.modelo==='auto'?(_modeloAuto?MODELOS_CEL.find(x=>x.id===_modeloAuto):null):MODELOS_CEL.find(x=>x.id===p.modelo);
   const entalhe=m?m.raio>8:sat>20;
-  const ilha=m?(m.ilha||null):(sat>=54?{w:126,h:37,top:sat>=62?14:11}:null);
+  const noSafari=h.classList.contains('ios')&&!h.classList.contains('standalone');
+  const ilha=noSafari?null:(m?(m.ilha||null):(sat>=54?{w:126,h:37,top:sat>=62?14:11}:null));
   h.classList.toggle('tem-entalhe',!!entalhe);
   const velho=document.getElementById('luzBorda');if(velho)velho.remove();
   const quer=p.borda||(p.ilha&&ilha);
   if(!quer)return;
-  const raio=m?m.raio:raioAuto(),movel=matchMedia('(max-width:700px)').matches;
+  const raio=noSafari?10:(m?m.raio:raioAuto()),movel=matchMedia('(max-width:700px)').matches;
   const svg=luzMontar(innerWidth,innerHeight,raio,ilha,p.borda,p.ilha,movel&&!semMov());
   svg.dataset.raio=raio;svg.dataset.borda=p.borda?'1':'0';
   if(p.ilha&&ilha){svg.dataset.ilhaTop=ilha.top;svg.dataset.ilhaW=ilha.w}
