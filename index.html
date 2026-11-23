@@ -1039,6 +1039,49 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
   .main.gaveta .thumbs{display:flex!important;position:fixed;left:calc(84px + var(--sal));top:calc(96px + var(--sat));bottom:calc(28px + var(--sab));width:208px;z-index:45;box-shadow:var(--shadow);border-radius:0 12px 12px 0}
   .main.is-home .thumbs{display:none!important}
 }
+/* ===== iPhone: Liquid Glass (só no celular com a classe "ios"; computador e Android ficam como estão) ===== */
+html.ios{--v-fundo:rgba(255,255,255,.07);--v-forte:rgba(16,28,60,.62);--v-borda:rgba(255,255,255,.2);--v-brilho:rgba(255,255,255,.4);--v-sombra:0 12px 32px rgba(0,6,28,.5),0 2px 8px rgba(0,6,28,.3);--v-vidro:blur(22px) saturate(190%)}
+html.ios[data-theme="light"]{--v-fundo:rgba(255,255,255,.5);--v-forte:rgba(255,255,255,.78);--v-borda:rgba(255,255,255,.9);--v-brilho:rgba(255,255,255,1);--v-sombra:0 12px 28px rgba(50,80,150,.22),0 2px 8px rgba(50,80,150,.12)}
+@media(max-width:700px){
+  html.ios body{background:radial-gradient(120% 55% at 12% -5%,rgba(40,110,255,.30),transparent 62%),radial-gradient(90% 45% at 100% 28%,rgba(125,90,255,.20),transparent 60%),radial-gradient(100% 50% at 35% 105%,rgba(0,190,255,.18),transparent 62%),var(--bg)}
+  html.ios[data-theme="light"] body{background:radial-gradient(120% 55% at 12% -5%,rgba(60,130,255,.22),transparent 62%),radial-gradient(90% 45% at 100% 28%,rgba(160,120,255,.16),transparent 60%),radial-gradient(100% 50% at 35% 105%,rgba(40,200,255,.16),transparent 62%),var(--bg)}
+  html.ios .app,html.ios .main{background:transparent}
+  html.ios .view{background:radial-gradient(rgba(120,165,255,.08) 1px,transparent 1.3px) 0 0/24px 24px}
+  /* barra de cima: cápsula de vidro */
+  html.ios .app{grid-template-rows:calc(64px + var(--sat)) auto minmax(0,1fr) calc(28px + var(--sab))}
+  html.ios .app>.top{margin:calc(var(--sat) + 6px) 10px 0;padding:0 8px;height:50px;align-self:start;border-radius:26px;background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.06)}
+  html.ios .app>.top::after{display:none}
+  html.ios .top .btn{background:transparent;border:0;box-shadow:none;border-radius:16px}
+  html.ios .top .btn:active{background:rgba(255,255,255,.16);transform:scale(.94)}
+  html.ios .top .btn.primary,html.ios #bSave{background:linear-gradient(180deg,rgba(90,170,255,.95),rgba(20,100,235,.95));box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 4px 14px rgba(20,100,235,.45)}
+  html.ios .paleta-btn{background:rgba(255,255,255,.08);border:1px solid var(--v-borda);box-shadow:inset 0 1px 0 var(--v-brilho)}
+  /* ferramentas de baixo: dock flutuante de vidro */
+  html.ios .rail{left:calc(10px + var(--sal));right:calc(10px + var(--sar));bottom:calc(36px + var(--sab));height:62px;border:1px solid var(--v-borda);border-radius:31px;background:var(--v-forte);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho);padding:0 8px}
+  html.ios .tool{border-radius:22px;width:66px;height:50px}
+  html.ios .tool{color:#dbe6ff}
+  html.ios[data-theme="light"] .tool{color:#1c2c55}
+  html.ios .tool[aria-pressed=true]{background:rgba(90,160,255,.3);box-shadow:inset 0 1px 0 var(--v-brilho),0 0 0 1px rgba(130,185,255,.4)}
+  html.ios .tool[aria-pressed=true]::before{display:none}
+  html.ios .rsep{background:var(--v-borda)}
+  html.ios .status{background:transparent;border:0}
+  html.ios .pages{padding-bottom:calc(130px + var(--sab))}
+  /* guias */
+  html.ios .guias{background:transparent;border:0}
+  html.ios .guia{border-radius:16px}
+  html.ios .guia[aria-selected=true]{background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border-color:var(--v-borda);box-shadow:inset 0 1px 0 var(--v-brilho)}
+  /* cartões da tela inicial, ferramentas e área de soltar */
+  html.ios .card,html.ios .tcard,html.ios .dropbox{background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);border-radius:22px;box-shadow:0 6px 20px rgba(0,6,28,.28),inset 0 1px 0 var(--v-brilho),inset 0 -1px 0 rgba(255,255,255,.04)}
+  html.ios .card:active,html.ios .tcard:active{transform:scale(.975);background:rgba(255,255,255,.12)}
+  /* botões e campos */
+  html.ios .btn{border-radius:14px}
+  html.ios .btn:not(.ghost):not(.primary):not(.icon){background:var(--v-fundo);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);box-shadow:inset 0 1px 0 var(--v-brilho)}
+  html.ios .btn.primary{background:linear-gradient(180deg,rgba(90,170,255,.95),rgba(20,100,235,.95));border:1px solid rgba(180,220,255,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(20,100,235,.4)}
+  html.ios input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]),html.ios select,html.ios textarea{background:rgba(255,255,255,.07);border:1px solid var(--v-borda);border-radius:14px;box-shadow:inset 0 1px 2px rgba(0,0,0,.25)}
+  /* janelas (folhas de baixo), menus, avisos, paleta e barras flutuantes */
+  html.ios .modal-bg{background:rgba(2,6,20,.38);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  html.ios .modal,html.ios .modal.wide,html.ios .modal.tmodal{background:var(--v-forte);-webkit-backdrop-filter:blur(34px) saturate(190%);backdrop-filter:blur(34px) saturate(190%);border:1px solid var(--v-borda);border-bottom:0;border-radius:32px 32px 0 0;box-shadow:0 -12px 44px rgba(0,6,28,.45),inset 0 1px 0 var(--v-brilho)}
+  html.ios .menu,html.ios .toast,html.ios #paleta .pl,html.ios #fmt,html.ios .findbar,html.ios .right.flutua,html.ios #dicaIos,html.ios .aviso-versao{background:var(--v-forte);-webkit-backdrop-filter:var(--v-vidro);backdrop-filter:var(--v-vidro);border:1px solid var(--v-borda);border-radius:24px;box-shadow:var(--v-sombra),inset 0 1px 0 var(--v-brilho)}
+}
 </style>
 </head>
 <body>
@@ -4442,6 +4485,8 @@ async function verAtualizacao(){
   });
 }
 setTimeout(verAtualizacao,6000);
+const ehIos=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+try{if(ehIos())document.documentElement.classList.add('ios')}catch(e){} // liga o visual Liquid Glass (só vale em tela de celular)
 // ---- visual do celular: contorno azul na borda da tela e anel na Dynamic Island (Configurações escolhe o modelo) ----
 const MODELOS_CEL=[
   {id:'auto',nome:'Automático (o app detecta)'},
