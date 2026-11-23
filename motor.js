@@ -23,16 +23,21 @@ const num = (v, padrao, mini, maxi) => { let x = parseFloat(String(v ?? '').repl
 const hexRgb = (h, p = [0, 0, 0]) => { h = String(h || '').replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return isNaN(n) ? p : [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
 const corPdf = (h, p) => { const [r, g, b] = hexRgb(h, p); return rgb(r, g, b); };
 
-function abrir(dados, nome = 'arquivo') {
+function abrir(dados, nome = 'arquivo', leniente = false) {
   let doc;
-  try { doc = M.Document.openDocument(dados, 'application/pdf'); } catch (e) { throw new Erro(`Não foi possível abrir “${nome}”: o PDF está corrompido ou não é um PDF.`); }
-  if (doc.needsPassword()) throw new Erro(`“${nome}” tem senha. Use “Desbloquear PDF” primeiro.`);
+  try { doc = M.Document.openDocument(dados, 'application/pdf'); } catch (e) { throw new Erro(`Não foi possível abrir “${nome}”: o PDF está danificado ou não é um PDF. Tente a ferramenta Reparar.`); }
+  if (doc.needsPassword()) { doc.destroy(); throw new Erro(`“${nome}” está protegido por senha. Informe a senha para abri-lo (ou use “Desbloquear PDF”).`); }
+  if (!leniente) {   // PDF sem páginas ou com a estrutura quebrada: mensagem clara em vez de erro técnico
+    try { if (!doc.countPages()) { doc.destroy(); throw new Erro(`“${nome}” não tem páginas.`); } doc.loadPage(0).destroy(); }
+    catch (e) { if (e instanceof Erro) throw e; try { doc.destroy(); } catch (x) {} throw new Erro(`Não foi possível ler as páginas de “${nome}”: o PDF está danificado. Tente a ferramenta Reparar.`); }
+  }
   return doc.asPDF();
 }
 function salvar(doc, opcoes = 'garbage=compact,compress') { return doc.saveToBuffer(opcoes).asUint8Array().slice(); }
 const rotacao = page => { try { const r = page.getObject().getInheritable('Rotate'); return r && r.isNumber() ? ((r.asNumber() % 360) + 360) % 360 : 0; } catch (e) { return 0; } };
 // ponto/retângulo do espaço do MuPDF (origem no topo esquerdo) para o espaço do PDF (origem embaixo)
 const ptPdf = (inv, x, y) => [x * inv[0] + y * inv[2] + inv[4], x * inv[1] + y * inv[3] + inv[5]];
+function novoRx(p, f) { try { return new RegExp(p, f); } catch (e) { throw new Erro('Este navegador é antigo demais para esta função (iOS/Safari anterior à versão 16.4). Atualize o sistema.'); } }
 function rectPdf(inv, r) { const a = ptPdf(inv, r[0], r[1]), b = ptPdf(inv, r[2], r[3]); return { x: Math.min(a[0], b[0]), y: Math.min(a[1], b[1]), w: Math.abs(b[0] - a[0]), h: Math.abs(b[1] - a[1]) }; }
 
 /* '1-3,5,7-' -> índices */
@@ -76,7 +81,8 @@ function corHex(c) {
   else { const [C, Mg, Y, K] = c; r = (1 - C) * (1 - K); g = (1 - Mg) * (1 - K); b = (1 - Y) * (1 - K); }
   return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, '0')).join('');
 }
-const quadRect = q => [Math.min(q[0], q[4]), Math.min(q[1], q[3]), Math.max(q[2], q[6]), Math.max(q[5], q[7])];
+// retângulo que envolve os 4 cantos do quadrilátero (certo também em páginas giradas 90°, 180° e 270°)
+const quadRect = q => [Math.min(q[0], q[2], q[4], q[6]), Math.min(q[1], q[3], q[5], q[7]), Math.max(q[0], q[2], q[4], q[6]), Math.max(q[1], q[3], q[5], q[7])];
 // blocos > linhas > caracteres (com fonte, tamanho, cor e posição de cada caractere)
 function blocosDaPagina(page) {
   const st = page.toStructuredText('preserve-whitespace');
@@ -98,7 +104,8 @@ function blocosDaPagina(page) {
 function familia(f) {
   const n = f.name || '';
   if (f.mono || /courier|mono|consolas|typewriter/i.test(n)) return 'mono';
-  if ((f.serif || /times|garamond|georgia|palatino|cambria|book|minion|serif/i.test(n)) && !/sans|arial|helvet|calibri|verdana|tahoma/i.test(n)) return 'serif';
+  if (/^(cidfont\+)?(f|font|tt|r|c|t|g|fnt)?\d+$/i.test(n.replace(/^[A-Z]{6}\+/, '').trim())) return 'sans'; // nome genérico (CIDFont+F2, F1...): as flags costumam marcar serifa por engano
+  if ((f.serif || /times|garamond|georgia|palatino|cambria|book|minion|serif/i.test(n)) && !/arial|helvet|sans|calibri|verdana|tahoma|segoe|roboto|lato|montserrat|trebuchet|gothic|univers|frutiger|myriad|ubuntu|poppins|nunito|inter\b|noto|dejavu|liberation|open/i.test(n)) return 'serif';
   return 'sans';
 }
 const ehNegrito = f => f.bold || /bold|black|heavy|semibold|demi/i.test(f.name || '');
@@ -121,6 +128,63 @@ function separarColunas(lines) {
   return colunas.map(c => c.sort((a, b) => a.bbox[1] - b.bbox[1]));
 }
 
+// runs do bloco: spans consecutivos de mesmo estilo; juntos reproduzem o texto do bloco (quebra = '\n', ou um espaço se corrido)
+function runsDoBloco(lines, wrapped) {
+  const runs = [], ws = c => !c.c.trim();
+  lines.forEach((l, i) => {
+    const cs = [...l.chars]; while (cs.length && ws(cs[cs.length - 1])) cs.pop();
+    if (wrapped && i) while (cs.length && ws(cs[0])) cs.shift();
+    if (i) { if (wrapped) { const u = runs[runs.length - 1]; if (u && u.f !== undefined) u.t += ' '; else runs.push({ t: ' ' }); } else runs.push({ t: '\n' }); }
+    for (const c of cs) {
+      const u = runs[runs.length - 1], s = Math.round(c.size * 100) / 100;
+      if (u && u.f !== undefined && (ws(c) || (u.f === c.f.name && u.s === s && u.c === c.color && u.b === +ehNegrito(c.f) && u.i === +ehItalico(c.f)))) u.t += c.c;
+      else runs.push({ t: c.c, f: c.f.name, fam: familia(c.f), b: +ehNegrito(c.f), i: +ehItalico(c.f), s, c: c.color });
+    }
+  });
+  return runs;
+}
+// Fragmentos: linhas de mesma base, tamanho e fonte, vizinhas na horizontal (lacuna 0..1.6*size). Os blocos que as contêm
+// são desfeitos, cada cadeia vira uma linha só e as linhas são reagrupadas em parágrafos. Blocos sem fragmentos não mudam.
+function fundirFragmentos(grupos) {
+  const todas = grupos.flatMap((g, gi) => g.map(l => ({ l, gi }))).sort((a, b) => a.l.bbox[0] - b.l.bbox[0]);
+  const prox = new Map(), temAnt = new Set();
+  todas.forEach((a, i) => {
+    let best = null, bg = 1e9;
+    for (let j = i + 1; j < todas.length; j++) {
+      const b = todas[j]; if (temAnt.has(b)) continue;
+      const gap = b.l.bbox[0] - a.l.bbox[2];
+      if (Math.abs(a.l.origin[1] - b.l.origin[1]) <= 1 && Math.abs(a.l.size - b.l.size) <= 0.6 && semSubset(a.l.font) === semSubset(b.l.font) && gap >= 0 && gap <= 1.6 * a.l.size && gap < bg) { bg = gap; best = b; }
+    }
+    if (best) { prox.set(a, best); temAnt.add(best); }
+  });
+  const afet = new Set(), fundidas = new Map();   // fundidas: linha inicial da cadeia -> linha fundida
+  const emCadeia = new Set();
+  for (const a of todas) {
+    if (temAnt.has(a) || !prox.has(a)) continue;
+    const cad = [a]; for (let u = prox.get(a); u; u = prox.get(u)) cad.push(u);
+    if (cad.length < 3) continue;   // 2 pedaços podem ser células de tabela: só remonta com 3 ou mais (texto justificado)
+    cad.forEach(c => { afet.add(c.gi); emCadeia.add(c); });
+    const L = cad.map(c => c.l), p = L[0];
+    let text = p.text, chars = [...p.chars];
+    for (const q of L.slice(1)) {
+      if (!/\s$/.test(text)) { const u = chars[chars.length - 1]; text += ' '; chars.push({ ...u, c: ' ' }); }
+      text += q.text; chars = chars.concat(q.chars);
+    }
+    fundidas.set(a, { ...p, bbox: [Math.min(...L.map(l => l.bbox[0])), Math.min(...L.map(l => l.bbox[1])), Math.max(...L.map(l => l.bbox[2])), Math.max(...L.map(l => l.bbox[3]))],
+      text, chars, styles: L.flatMap(l => l.styles), ocr: L.every(l => l.ocr) });
+  }
+  if (!afet.size) return grupos;
+  const soltas = [];
+  for (const c of todas) { if (!afet.has(c.gi)) continue; if (fundidas.has(c)) soltas.push(fundidas.get(c)); else if (!emCadeia.has(c)) soltas.push(c.l); }
+  const paras = [];
+  for (const l of soltas.sort((a, b) => a.bbox[1] - b.bbox[1])) {
+    const par = paras.find(P => { const u = P[P.length - 1];
+      return l.bbox[1] - Math.max(...P.map(x => x.bbox[3])) < 0.9 * u.size && Math.abs(l.size - u.size) <= 0.6
+        && (Math.abs(l.bbox[0] - u.bbox[0]) <= 3 || Math.abs((l.bbox[0] + l.bbox[2]) / 2 - (u.bbox[0] + u.bbox[2]) / 2) <= 3 || Math.abs(l.bbox[2] - u.bbox[2]) <= 3); });
+    if (par) par.push(l); else paras.push([l]);
+  }
+  return grupos.filter((g, gi) => !afet.has(gi)).concat(paras);
+}
 function analisar(dados, pno) {
   const doc = abrir(dados);
   try {
@@ -128,7 +192,7 @@ function analisar(dados, pno) {
     const page = doc.loadPage(pno);
     const [x0p, y0p, x1p, y1p] = page.getBounds();
     if (rotacao(page)) return { rotated: true, blocks: [] };
-    const out = []; var pix = null;
+    const out = []; var pix = null; const grupos = [];
     for (const b of blocosDaPagina(page)) {
       const todas = []; let horizontal = true;
       for (const l of b.lines) {
@@ -142,11 +206,13 @@ function analisar(dados, pno) {
         const main = l.chars.find(c => c.c.trim() && semSubset(c.f.name) + '|' + Math.round(c.size * 10) / 10 + '|' + c.color === mainK) || l.chars[0];
         const first = l.chars.find(c => c.c.trim()) || l.chars[0];
         todas.push({ bbox: l.bbox.map(v => Math.round(v * 100) / 100), origin: [Math.round(l.chars[0].origin[0] * 100) / 100, Math.round(first.origin[1] * 100) / 100],
-          text, size: Math.round(main.size * 100) / 100, font: main.f.name, color: main.color, f: main.f, styles: [...cont.keys()],
+          text, size: Math.round(main.size * 100) / 100, font: main.f.name, color: main.color, f: main.f, styles: [...cont.keys()], chars: l.chars,
           // camada invisível do OCR (fonte GlyphLessFont do Tesseract): o que se vê são os pixels da imagem escaneada
           ocr: l.chars.every(c => !c.c.trim() || /glyphless/i.test(c.f.name || '')) });
       }
-      if (!horizontal || !todas.length) continue;
+      if (horizontal && todas.length) grupos.push(todas);
+    }
+    for (const todas of fundirFragmentos(grupos)) {   // 1ª linha justificada que o MuPDF devolve em pedaços volta a ser uma linha só
       for (const lines of separarColunas(todas)) {   // células de tabela lado a lado viram blocos separados
       const x0 = Math.min(...lines.map(l => l.bbox[0])), y0 = Math.min(...lines.map(l => l.bbox[1]));
       const x1 = Math.max(...lines.map(l => l.bbox[2])), y1 = Math.max(...lines.map(l => l.bbox[3]));
@@ -157,13 +223,20 @@ function analisar(dados, pno) {
       const deltas = lines.slice(0, -1).map((l, i) => lines[i + 1].origin[1] - l.origin[1]);
       let lineh = deltas.length && size ? mediana(deltas) / size : 1.2; lineh = Math.max(0.9, Math.min(2.5, lineh));
       let align = 'left';
-      if (lines.length > 1) {
+      const runs = lines.every(l => l.ocr) ? [] : runsDoBloco(lines, wrapped);
+      if (wrapped && lines.length > 1 && Math.max(...lines.map(l => l.bbox[0])) - Math.min(...lines.map(l => l.bbox[0])) <= 1.5
+        && (() => { const R = lines.slice(0, -1).map(l => l.bbox[2]); return Math.max(...R) - Math.min(...R) <= 1.5; })()) align = 'justify';
+      else if (lines.length > 1) {
         const L = lines.map(l => l.bbox[0]), R = lines.map(l => l.bbox[2]), C = lines.map(l => (l.bbox[0] + l.bbox[2]) / 2);
         const sp = a => Math.max(...a) - Math.min(...a);
         align = sp(L) < 2 ? 'left' : sp(C) < 2 ? 'center' : sp(R) < 2 ? 'right' : 'left';
+      } else {
+        // linha única centralizada na página (título): mantém centralizada ao editar
+        const pb = page.getBounds(), pw = pb[2] - pb[0], bw = x1 - x0;
+        if (bw < 0.9 * pw && x0 > 0.08 * pw && Math.abs((x0 + x1) / 2 - pw / 2) < 3) align = 'center';
       }
       const f0 = lines[0].f, estilos = new Set(lines.flatMap(l => l.styles));
-      const bloco = { bbox: [x0, y0, x1, y1].map(v => Math.round(v * 100) / 100), lines: lines.map(({ f, styles, ...r }) => r), text, wrapped, size, font: f0.name,
+      const bloco = { bbox: [x0, y0, x1, y1].map(v => Math.round(v * 100) / 100), lines: lines.map(({ f, styles, chars, ...r }) => r), runs, text, wrapped, size, font: f0.name,
         color: lines[0].color, family: familia(f0), bold: ehNegrito(f0), italic: ehItalico(f0), lineh: Math.round(lineh * 1000) / 1000, align, origin: lines[0].origin, mixed: estilos.size > 1 };
       if (lines.every(l => l.ocr)) {   // página escaneada: cor da letra e do papel vêm dos pixels
         if (!pix) pix = page.toPixmap(M.Matrix.identity, M.ColorSpace.DeviceRGB, false);
@@ -216,6 +289,66 @@ function quebrar(fonte, texto, tam, larg) {
 }
 // caixa do OCR aumentada (mais embaixo, por causa das pernas de g, p, q, j); m = margem extra da pintura da cor do papel
 const areaOcr = (o, m = 0) => { const [x0, y0, x1, y1] = o.bbox; return [x0 - 1.5 - m, y0 - 1.5 - m, x1 + 1.5 + m, y1 + 1.5 + 0.22 * o.size + m]; };
+// motor de layout por runs: tokens (palavras/espaços com estilo), quebra de linha, alinhamento e justificado
+async function escreverRuns(pd, fontes, pg, inv, o, avisos, conta) {
+  const [x0, , x1] = o.bbox, tam = +o.size, lineh = +(o.lineh || 1.2), al = o.align || 'left', wrapped = !!o.wrapped, W = x1 - x0 + 0.5;
+  const toks = [];   // token: {t, fonte, s, cor, esp, w}; {nl:true} = quebra forçada
+  for (const r of o.runs) {
+    const fonte = await fontePdf(pd, fontes, r.fam || o.family || 'sans', !!(r.b ?? o.bold), !!(r.i ?? o.italic));   // cache: uma vez por chave
+    const s = +r.s > 0 ? +r.s : tam, cor = corPdf(r.c || o.color);
+    String(r.t ?? '').split('\n').forEach((parte, k) => {
+      if (k) toks.push({ nl: true });
+      for (const m of cabe(fonte, parte, conta).match(/\s+|\S+/g) || []) toks.push({ t: m, fonte, s, cor, esp: /^\s/.test(m), w: fonte.widthOfTextAtSize(m, s) });
+    });
+  }
+  const linhas = []; let atual = [], larg = 0;
+  const fecha = forcada => { while (atual.length && atual[atual.length - 1].esp) atual.pop(); linhas.push({ toks: atual, forcada }); atual = []; larg = 0; };
+  for (const t of toks) {
+    if (t.nl) { fecha(true); continue; }
+    if (wrapped && !t.esp && larg + t.w > W && atual.some(x => !x.esp)) fecha(false);
+    if (!atual.length && t.esp && wrapped && linhas.length && !linhas[linhas.length - 1].forcada) continue;   // sem espaço no início da linha quebrada
+    atual.push(t); larg += t.w;
+  }
+  fecha(true);
+  const altura = pg.getSize().height; let cortou = false;
+  linhas.forEach((ln, i) => {
+    if (cortou || !ln.toks.length) return;
+    const base = o.origin[1] + i * lineh * tam, py = ptPdf(inv, 0, base)[1];
+    if (py < 0 || py > altura + 1) { cortou = true; return; }
+    const w = ln.toks.reduce((a, t) => a + t.w, 0), esp = ln.toks.filter(t => t.esp).length;
+    let x = al === 'center' ? (x0 + x1) / 2 - w / 2 : al === 'right' ? x1 - w : (al === 'left' && !wrapped ? o.origin[0] : x0), extra = 0;
+    if (al === 'justify' && !ln.forcada && esp && W - 0.5 > w) extra = (W - 0.5 - w) / esp;
+    for (const t of ln.toks) {
+      if (!t.esp) { const p = ptPdf(inv, x, base); pg.drawText(t.t, { x: p[0], y: p[1], size: t.s, font: t.fonte, color: t.cor }); x += t.w; }
+      else x += t.w + extra;
+    }
+  });
+  if (cortou) avisos.push(`Página ${o.page + 1}: o texto passou do fim da página; escrevi só o que coube.`);
+}
+// Campos de formulário e anotações (notas, comentários) sob uma tarja guardam o dado fora do texto da página: saem junto.
+// As áreas vêm no espaço da página como aparece na tela (o MuPDF.js já cuida da rotação da página).
+function limparSob(doc, page, areas) {
+  const cruza = b => areas.some(r => b[0] < r[2] && b[2] > r[0] && b[1] < r[3] && b[3] > r[1]);
+  let n = 0;
+  try {
+    const A = page.getObject().get('Annots'), raiz = doc.getTrailer().get('Root'), campos = (() => { try { const f = raiz.get('AcroForm').get('Fields'); return f && f.isArray() ? f : null; } catch (e) { return null; } })();
+    const tira = (arr, num) => { if (arr) for (let i = arr.length - 1; i >= 0; i--) { const x = arr.get(i); if (x.isIndirect() && x.asIndirect() === num) arr.delete(i); } };
+    for (const w of [...page.getWidgets()]) {
+      if (!cruza(w.getBounds())) continue;
+      const o = w.getObject(), num = o.isIndirect() ? o.asIndirect() : -1;
+      try { w.setTextValue(''); } catch (e) {}
+      for (const k of ['V', 'DV', 'AP', 'RV']) { try { o.delete(k); } catch (e) {} }
+      try { const pai = o.get('Parent'); if (pai && pai.isDictionary()) { pai.delete('V'); pai.delete('DV'); } } catch (e) {}
+      if (num >= 0) { tira(A, num); tira(campos, num); }
+      n++;
+    }
+    for (const a of [...page.getAnnotations()]) {
+      let tipo = ''; try { tipo = a.getType(); } catch (e) {}
+      if (tipo !== 'Redact' && cruza(a.getBounds())) { page.deleteAnnotation(a); n++; }
+    }
+  } catch (e) { console.error('limparSob', e); }
+  return n;
+}
 async function aplicar(dados, ops) {
   const doc = abrir(dados);
   validar(ops, doc.countPages());
@@ -235,6 +368,7 @@ async function aplicar(dados, ops) {
         page.applyRedactions(false, M.PDFPage.REDACT_IMAGE_PIXELS, M.PDFPage.REDACT_LINE_ART_NONE, M.PDFPage.REDACT_TEXT_REMOVE);
       }
       if (reds.length) {   // 2) tarjas: apagam texto, pixels de imagem e desenhos cobertos
+        limparSob(doc, page, reds.map(o => o.bbox));
         for (const o of reds) { const a = page.createAnnotation('Redact'); a.setRect(o.bbox); }
         page.applyRedactions(false, M.PDFPage.REDACT_IMAGE_PIXELS, M.PDFPage.REDACT_LINE_ART_REMOVE_IF_COVERED, M.PDFPage.REDACT_TEXT_REMOVE);
       }
@@ -247,8 +381,9 @@ async function aplicar(dados, ops) {
     const pg = pages[o.page], inv = invs[o.page];
     if (o.kind === 'redact') { const r = rectPdf(inv, o.bbox); pg.drawRectangle({ x: r.x, y: r.y, width: r.w, height: r.h, color: corPdf(o.fill || '#000000') }); continue; }
     if (o.ocr) { const r = rectPdf(inv, areaOcr(o, 1)); pg.drawRectangle({ x: r.x, y: r.y, width: r.w, height: r.h, color: corPdf(o.bg || '#ffffff') }); }
-    const texto = String(o.text || '');
+    const texto = String(o.text ?? (Array.isArray(o.runs) ? o.runs.map(r => r.t).join('') : ''));
     if (!texto.trim()) { report.push({ page: o.page, fonte: null, apagado: true }); continue; }
+    if (Array.isArray(o.runs) && o.runs.length && !o.ocr) { report.push({ page: o.page, fonte: 'padrao' }); await escreverRuns(pd, fontes, pg, inv, o, avisos, conta); continue; }
     const fonte = await fontePdf(pd, fontes, o.family || 'sans', !!o.bold, !!o.italic);
     report.push({ page: o.page, fonte: 'padrao' });
     const cor = corPdf(o.color), tam = +o.size, [x0, y0, x1, y1] = o.bbox;
@@ -295,13 +430,13 @@ const PADROES = {
 const escapar = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function expressoes(op) {
   const out = [];
-  for (const k of op.padroes || []) if (PADROES[k]) out.push([PADROES[k][0], new RegExp(PADROES[k][1], 'gu')]);
+  for (const k of op.padroes || []) if (PADROES[k]) out.push([PADROES[k][0], novoRx(PADROES[k][1], 'gu')]);
   let termos = op.termos; if (typeof termos === 'string') termos = termos.split(/[\n;]+/);
   for (let t of termos || []) {
     t = String(t || '').trim(); if (!t) continue;
     if (t.length > 300) throw new Erro('Termo de busca grande demais.');
     let p = escapar(t); if (op.inteira) p = String.raw`(?<![\p{L}\p{N}_])` + p + String.raw`(?![\p{L}\p{N}_])`;
-    out.push(['Termo', new RegExp(p, 'gu' + (op.maiusculas ? '' : 'i'))]);
+    out.push(['Termo', novoRx(p, 'gu' + (op.maiusculas ? '' : 'i'))]);
   }
   if (!out.length) throw new Erro('Marque o que procurar ou digite uma palavra.');
   return out;
@@ -331,10 +466,13 @@ function buscar(dados, op) {
   const doc = abrir(dados), regs = expressoes(op), res = [];
   try {
     for (let i = 0; i < doc.countPages(); i++) {
-      for (const [rotulo, texto, r] of ocorrencias(doc.loadPage(i), regs)) {
-        res.push({ pagina: i, rotulo, texto, rect: r.map(v => Math.round(v * 100) / 100) });
-        if (res.length >= 5000) return res;
-      }
+      const pg = doc.loadPage(i);
+      try {
+        for (const [rotulo, texto, r] of ocorrencias(pg, regs)) {
+          res.push({ pagina: i, rotulo, texto, rect: r.map(v => Math.round(v * 100) / 100) });
+          if (res.length >= 5000) return res;
+        }
+      } finally { pg.destroy(); }
     }
   } finally { doc.destroy(); }
   return res;
@@ -347,32 +485,55 @@ function carregarTesseract() {
     const s = document.createElement('script'); s.src = BASE + 'lib/tesseract/tesseract.min.js'; s.onload = () => ok(window.Tesseract); s.onerror = () => falha(new Erro('Não consegui carregar o OCR.')); document.head.appendChild(s);
   }));
 }
-async function ocr(dados, paginas, idioma = 'por+eng', pular = true) {
+// worker reaproveitado entre chamadas; criado sob demanda e terminado após ~60 s ocioso
+let workerOcr = null, langsOcr = '', timerOcr = null, criandoOcr = null;
+async function obterWorkerOcr(lista) {
+  if (timerOcr) { clearTimeout(timerOcr); timerOcr = null; }
+  if (criandoOcr) { try { await criandoOcr; } catch (e) {} }
+  const chave = lista.join('+');
+  if (workerOcr) {
+    if (langsOcr !== chave) { await workerOcr.reinitialize(lista, 1); langsOcr = chave; }
+    return workerOcr;
+  }
   const T = await carregarTesseract();
+  criandoOcr = T.createWorker(lista, 1, { workerPath: BASE + 'lib/tesseract/worker.min.js', corePath: BASE + 'lib/tesseract/core', langPath: BASE + 'lib/tesseract/lang', gzip: false, workerBlobURL: false, cacheMethod: 'none' });
+  try { workerOcr = await criandoOcr; langsOcr = chave; } finally { criandoOcr = null; }
+  return workerOcr;
+}
+function agendarFimWorkerOcr() {
+  if (timerOcr) clearTimeout(timerOcr);
+  timerOcr = setTimeout(() => { const w = workerOcr; workerOcr = null; langsOcr = ''; timerOcr = null; if (w) w.terminate().catch(() => {}); }, 60000);
+}
+async function ocr(dados, paginas, idioma = 'por+eng', pular = true) {
   const langs = String(idioma || 'por+eng').split('+').filter(l => ['por', 'eng'].includes(l));
-  const worker = await T.createWorker(langs.length ? langs : ['por'], 1, { workerPath: BASE + 'lib/tesseract/worker.min.js', corePath: BASE + 'lib/tesseract/core', langPath: BASE + 'lib/tesseract/lang', gzip: false, workerBlobURL: false, cacheMethod: 'none' });
+  const lista = langs.length ? langs : ['por'];
+  const worker = await obterWorkerOcr(lista);
   const avisos = []; let reconhecidas = 0, giradas = 0;
-  const doc = abrir(dados), pd = await LibDoc.load(dados), pages = pd.getPages();
+  let doc = null;
   try {
-    await worker.setParameters({ user_defined_dpi: '300' });
+    doc = abrir(dados);
+    const pd = await LibDoc.load(dados), pages = pd.getPages();
+    await worker.setParameters({ user_defined_dpi: '200' });
     const alvo = paginas && paginas.length ? paginas : [...Array(doc.countPages()).keys()];
     for (const i of alvo) {
       const page = doc.loadPage(i);
-      if (pular) { const st = page.toStructuredText(''); const t = st.asText().trim(); st.destroy(); if (t.length > 20) continue; }
-      if (rotacao(page)) { giradas++; continue; }
-      const pix = page.toPixmap(M.Matrix.scale(300 / 72, 300 / 72), M.ColorSpace.DeviceRGB, false);
-      const png = pix.asPNG().slice(); pix.destroy();
-      const { data } = await worker.recognize(new Blob([png], { type: 'image/png' }), { pdfTitle: 'ocr', pdfTextOnly: true }, { pdf: true, text: false });
-      // camada de texto invisível desenhada por cima da página original (a aparência não muda)
-      const [emb] = await pd.embedPdf(new Uint8Array(data.pdf));
-      const cb = pages[i].getCropBox();
-      pages[i].drawPage(emb, { x: cb.x, y: cb.y, width: cb.width, height: cb.height });
-      reconhecidas++;
+      try {
+        if (pular) { const st = page.toStructuredText(''); const t = st.asText().trim(); st.destroy(); if (t.length > 20) continue; }
+        if (rotacao(page)) { giradas++; continue; }
+        const pix = page.toPixmap(M.Matrix.scale(200 / 72, 200 / 72), M.ColorSpace.DeviceRGB, false);
+        const png = pix.asPNG().slice(); pix.destroy();
+        const { data } = await worker.recognize(new Blob([png], { type: 'image/png' }), { pdfTitle: 'ocr', pdfTextOnly: true }, { pdf: true, text: false });
+        // camada de texto invisível desenhada por cima da página original (a aparência não muda)
+        const [emb] = await pd.embedPdf(new Uint8Array(data.pdf));
+        const cb = pages[i].getCropBox();
+        pages[i].drawPage(emb, { x: cb.x, y: cb.y, width: cb.width, height: cb.height });
+        reconhecidas++;
+      } finally { page.destroy(); }
     }
-  } finally { await worker.terminate(); doc.destroy(); }
-  if (giradas) avisos.push(`${giradas} página(s) girada(s) não foram reconhecidas no celular.`);
-  const saida = await pd.save();
-  return { bytes: saida, get pdf() { return bytesParaB64(saida); }, reconhecidas, avisos };
+    if (giradas) avisos.push(`${giradas} página(s) girada(s) não foram reconhecidas no celular.`);
+    const saida = await pd.save();
+    return { bytes: saida, get pdf() { return bytesParaB64(saida); }, reconhecidas, avisos };
+  } finally { if (doc) doc.destroy(); agendarFimWorkerOcr(); }
 }
 
 /* ------------------------------------------------------------ ZIP simples (vários arquivos de saída) */
@@ -398,7 +559,15 @@ function zip(arquivos) {
 
 /* ------------------------------------------------------------ imagens (canvas) */
 async function abrirImg(nome, dados) {
-  try { return await createImageBitmap(new Blob([dados]), { imageOrientation: 'from-image' }); }
+  try {
+    const bm = await createImageBitmap(new Blob([dados]), { imageOrientation: 'from-image' });
+    const MAX = 12e6;   // fotos de mais de ~12 megapixels ficam em branco em vários celulares: reduz antes de usar
+    if (bm.width * bm.height > MAX) {
+      const f = Math.sqrt(MAX / (bm.width * bm.height)), w = Math.max(1, Math.floor(bm.width * f)), h = Math.max(1, Math.floor(bm.height * f));
+      const peq = await createImageBitmap(bm, { resizeWidth: w, resizeHeight: h, resizeQuality: 'high' }); bm.close && bm.close(); return peq;
+    }
+    return bm;
+  }
   catch (e) { throw new Erro(`“${nome}” não é uma imagem válida (use JPG, PNG, WEBP, BMP ou GIF).`); }
 }
 async function canvasPara(cv, fmt, q = 0.9) {
@@ -435,7 +604,7 @@ function texto(pg, t, u, v, opt) { const p = noPapel(pg, u, v); pg.drawText(t, {
 const F = {};
 const PDF = ['.pdf'], IMG = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif'];
 
-F.juntar = { min: 2, max: 60, ext: PDF, fn(arqs) {
+F.juntar = { min: 2, max: 20000, ext: PDF, fn(arqs) {
   const out = new M.PDFDocument();
   for (const [nome, dados] of arqs) { const d = abrir(dados, nome); for (let i = 0; i < d.countPages(); i++) out.graftPage(-1, d, i); d.destroy(); }
   const n = out.countPages(); const b = salvar(out); out.destroy();
@@ -521,7 +690,7 @@ F.comprimir = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
 } };
 F.reparar = { min: 1, max: 20, ext: PDF, fn(arqs) {
   const s = [], a = [];
-  for (const [nome, dados] of arqs) { const d = abrir(dados, nome); if (!d.countPages()) throw new Erro(`“${nome}” não tem nenhuma página recuperável.`);
+  for (const [nome, dados] of arqs) { const d = abrir(dados, nome, true); if (!d.countPages()) throw new Erro(`“${nome}” não tem nenhuma página recuperável.`);
     s.push([base(nome) + '-reparado.pdf', salvar(d, 'garbage=compact,compress,clean')]); a.push(`“${nome}”: ${d.wasRepaired() ? 'estrutura reparada' : 'não havia defeito aparente, reescrito limpo'} (${d.countPages()} páginas).`); d.destroy(); }
   return [s, a];
 } };
@@ -717,11 +886,11 @@ F.img2pdf = { min: 1, max: 100, ext: IMG, async fn(arqs, op) {
   return [sep ? s : [['imagens.pdf', await unico.save()]], []];
 } };
 F.pdf2img = { min: 1, max: 10, ext: PDF, fn(arqs, op) {
-  const fmt = op.formato === 'png' ? 'png' : 'jpg', dpi = Math.round(num(op.dpi, 150, 50, 300)), s = [];
+  const fmt = op.formato === 'png' ? 'png' : 'jpg', dpi0 = Math.round(num(op.dpi, 150, 50, 300)), s = []; let dpi = dpi0;
   for (const [nome, dados] of arqs) {
     const d = abrir(dados, nome);
-    for (const i of faixa(op.paginas, d.countPages(), true)) { const pix = d.loadPage(i).toPixmap(M.Matrix.scale(dpi / 72, dpi / 72), M.ColorSpace.DeviceRGB, false);
-      s.push([`${base(nome)}-pagina-${String(i + 1).padStart(3, '0')}.${fmt}`, (fmt === 'jpg' ? pix.asJPEG(90) : pix.asPNG()).slice()]); pix.destroy(); }
+    for (const i of faixa(op.paginas, d.countPages(), true)) { const pg = d.loadPage(i); try { const bb = pg.getBounds(), k = dpi / 72, mp = (bb[2] - bb[0]) * (bb[3] - bb[1]) * k * k, lim = 40e6, kk = mp > lim ? k * Math.sqrt(lim / mp) : k; if (kk < k) dpi = Math.min(dpi, Math.max(10, Math.round(kk * 72))); const pix = pg.toPixmap(M.Matrix.scale(kk, kk), M.ColorSpace.DeviceRGB, false);
+      s.push([`${base(nome)}-pagina-${String(i + 1).padStart(3, '0')}.${fmt}`, (fmt === 'jpg' ? pix.asJPEG(90) : pix.asPNG()).slice()]); pix.destroy(); } finally { pg.destroy(); } }
     d.destroy();
   }
   return [s, [`${s.length} imagem(ns) geradas a ${dpi} dpi.`]];
@@ -735,11 +904,15 @@ F.tarja_auto = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
   for (const [nome, dados] of arqs) {
     const d = abrir(dados, nome), cont = {}, alvo = faixa(op.paginas, d.countPages(), true), caixas = []; let semTexto = 0;
     for (const i of alvo) {
-      const pg = d.loadPage(i), inv = M.Matrix.invert(pg.getTransform());
+      const pg = d.loadPage(i);
+      try {
+      const inv = M.Matrix.invert(pg.getTransform());
       const st = pg.toStructuredText(''); if (!st.asText().trim()) semTexto++; st.destroy();
       const ach = ocorrencias(pg, regs);
+      if (ach.length) limparSob(d, pg, ach.map(([, , r]) => [r[0] - .5, r[1] - .5, r[2] + .5, r[3] + .5]));
       for (const [rot, , r] of ach) { const ann = pg.createAnnotation('Redact'); ann.setRect([r[0] - .5, r[1] - .5, r[2] + .5, r[3] + .5]); cont[rot] = (cont[rot] || 0) + 1; caixas.push([i, rectPdf(inv, [r[0] - .5, r[1] - .5, r[2] + .5, r[3] + .5])]); }
       if (ach.length) pg.applyRedactions(false, M.PDFPage.REDACT_IMAGE_PIXELS, M.PDFPage.REDACT_LINE_ART_NONE, M.PDFPage.REDACT_TEXT_REMOVE);
+      } finally { pg.destroy(); }
     }
     if (op.metadados !== false) { for (const k of ['info:Title', 'info:Author', 'info:Subject', 'info:Keywords', 'info:Creator', 'info:Producer']) try { d.setMetaData(k, ''); } catch (e) {}
       try { d.getTrailer().get('Root').delete('Metadata'); } catch (e) {} }
@@ -755,12 +928,14 @@ F.tarja_auto = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
 } };
 F.substituir = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
   const busca = String(op.busca || ''); if (!busca.trim()) throw new Erro('Digite o texto a procurar.');
-  const troca = String(op.troca || ''), rx = new RegExp((op.inteira ? String.raw`(?<![\p{L}\p{N}_])` : '') + escapar(busca) + (op.inteira ? String.raw`(?![\p{L}\p{N}_])` : ''), 'gu' + (op.maiusculas ? '' : 'i'));
+  const troca = String(op.troca || ''), rx = novoRx((op.inteira ? String.raw`(?<![\p{L}\p{N}_])` : '') + escapar(busca) + (op.inteira ? String.raw`(?![\p{L}\p{N}_])` : ''), 'gu' + (op.maiusculas ? '' : 'i'));
   const s = [], a = [];
   for (const [nome, dados] of arqs) {
     const d = abrir(dados, nome), ops = []; let trocas = 0, giradas = 0, mistas = 0;
     for (const pno of faixa(op.paginas, d.countPages(), true)) {
-      const pg = d.loadPage(pno), rot = rotacao(pg);
+      const pg = d.loadPage(pno);
+      try {
+      const rot = rotacao(pg);
       for (const b of blocosDaPagina(pg)) for (const l of b.lines) {
         const txt = l.chars.map(c => c.c).join(''), n = (txt.match(rx) || []).length; if (!n) continue;
         if (rot || Math.abs(l.dir[1]) > .02 || l.dir[0] < .98) { giradas += n; continue; }
@@ -770,13 +945,14 @@ F.substituir = { min: 1, max: 20, ext: PDF, async fn(arqs, op) {
           family: familia(main.f), bold: ehNegrito(main.f), italic: ehItalico(main.f), text: txt.replace(rx, () => troca).trim(), align: 'left' });
         trocas += n;
       }
+      } finally { pg.destroy(); }
     }
     d.destroy();
     let saida = dados, av = [];
-    if (ops.length) { const r = await aplicar(dados, ops); saida = r.bytes; av = r.warnings; }
+    for (let i = 0; i < ops.length; i += 1500) { const r = await aplicar(saida, ops.slice(i, i + 1500)); saida = r.bytes; av = av.concat(r.warnings); }   // em lotes: o limite é 2000 operações por pedido
     s.push([base(nome) + '-substituido.pdf', saida]);
-    a.push(trocas ? `“${nome}”: ${trocas} ocorrência(s) trocada(s).` : `“${nome}”: “${busca}” não foi encontrado.`);
-    if (giradas) a.push(`${giradas} ocorrência(s) em texto girado ou inclinado não foram trocadas.`);
+    a.push(trocas ? `“${nome}”: ${trocas} ocorrência(s) trocada(s).` : giradas ? `“${nome}”: encontrei “${busca}”, mas só em página girada ou texto inclinado.` : `“${nome}”: “${busca}” não foi encontrado.`);
+    if (giradas) a.push(`${giradas} ocorrência(s) em página girada ou em texto inclinado não foram trocadas (ainda não é possível trocar texto nesses casos).`);
     if (mistas) a.push(`${mistas} linha(s) misturavam estilos (negrito, cores ou tamanhos) e ficaram com um estilo só.`);
     a.push(...av);
   }
@@ -852,6 +1028,58 @@ async function executar(ferramenta, arquivos, opcoes) {
   return { nome, mime: MIME[(nome.split('.').pop() || '').toLowerCase()] || 'application/octet-stream', b64: bytesParaB64(bytes), avisos };
 }
 
+/* fundo: região da página SEM o texto (redação só de texto, nada pintado), em PNG escala 3; {png:null} em qualquer falha */
+function fundo(dados, pno, bbox) {
+  let doc = null, page = null, pix = null, dev = null;
+  try {
+    if (!M.PDFPage || !M.PDFPage.prototype.applyRedactions || !M.Pixmap || !M.DrawDevice) return { png: null };
+    if (!Array.isArray(bbox) || bbox.length < 4) return { png: null };
+    const [x0, y0, x1, y1] = bbox.map(Number);
+    if (![x0, y0, x1, y1].every(isFinite) || x1 <= x0 || y1 <= y0 || x1 - x0 > 1200 || y1 - y0 > 1200) return { png: null };
+    doc = abrir(dados);
+    if (!(pno >= 0 && pno < doc.countPages())) return { png: null };
+    page = doc.loadPage(pno);
+    const a = page.createAnnotation('Redact');
+    a.setRect([x0 + 0.4, y0 + 0.4, x1 - 0.4, y1 - 0.4]);
+    page.applyRedactions(false, M.PDFPage.REDACT_IMAGE_NONE, M.PDFPage.REDACT_LINE_ART_NONE, M.PDFPage.REDACT_TEXT_REMOVE);
+    const W = Math.max(1, Math.ceil((x1 - x0) * 3)), H = Math.max(1, Math.ceil((y1 - y0) * 3));
+    pix = new M.Pixmap(M.ColorSpace.DeviceRGB, [0, 0, W, H], false);
+    pix.clear(255);
+    dev = new M.DrawDevice(M.Matrix.concat(M.Matrix.translate(-x0, -y0), M.Matrix.scale(3, 3)), pix);
+    page.run(dev, M.Matrix.identity);
+    dev.close();
+    return { png: 'data:image/png;base64,' + bytesParaB64(pix.asPNG().slice()) };
+  } catch (e) { return { png: null }; }
+  finally {
+    try { if (dev) dev.destroy(); } catch (e) {}
+    try { if (pix) pix.destroy(); } catch (e) {}
+    try { if (page) page.destroy(); } catch (e) {}
+    try { if (doc) doc.destroy(); } catch (e) {}
+  }
+}
+
+/* fonte: extrai o arquivo TrueType/OpenType da fonte da página (pelo nome); {data:null} se não der */
+function fonteArquivo(dados, pno, nome) {
+  let doc = null, page = null;
+  try {
+    doc = abrir(dados); page = doc.loadPage(pno);
+    const alvo = semSubset(nome), fonts = page.getObject().getInheritable('Resources').get('Font');
+    if (!alvo || !fonts || !fonts.isDictionary()) return { data: null };
+    let achado = null;
+    fonts.forEach(fd => { if (achado) return; const bf = fd.get('BaseFont'); if (bf && bf.isName() && semSubset(bf.asName()) === alvo) achado = fd; });
+    if (!achado) return { data: null };
+    let fd = achado; const desc = achado.get('DescendantFonts'); if (desc && desc.isArray()) fd = desc.get(0);
+    const fdesc = fd.get('FontDescriptor'); if (!fdesc || !fdesc.isDictionary()) return { data: null };
+    for (const k of ['FontFile2', 'FontFile3']) {
+      const ff = fdesc.get(k); if (!ff || !ff.isStream()) continue;
+      const u = ff.readStream().asUint8Array(), m = String.fromCharCode(u[0], u[1], u[2], u[3]);
+      if (u.length > 12 && (m === '\x00\x01\x00\x00' || m === 'true' || m === 'OTTO')) return { data: 'data:font/ttf;base64,' + bytesParaB64(u), fmt: 'ttf' };
+    }
+    return { data: null };
+  } catch (e) { return { data: null }; }
+  finally { try { if (page) page.destroy(); } catch (e) {} try { if (doc) doc.destroy(); } catch (e) {} }
+}
+
 /* ------------------------------------------------------------ rotas (mesmas do servidor.py) */
 export async function chamar(caminho, corpo = {}) {
   try {
@@ -865,6 +1093,8 @@ export async function chamar(caminho, corpo = {}) {
       return o;
     };
     if (caminho === '/api/analyze') return analisar(pdf, +corpo.page);
+    if (caminho === '/api/fonte') return fonteArquivo(pdf, +corpo.page, String(corpo.font || ''));
+    if (caminho === '/api/fundo') return fundo(pdf, +corpo.page, corpo.bbox);
     if (caminho === '/api/apply') return saida(await aplicar(pdf, corpo.ops));
     if (caminho === '/api/ocr') return saida(await ocr(pdf, corpo.paginas, corpo.idioma, corpo.pular_com_texto !== false));
     if (caminho === '/api/buscar') return { resultados: buscar(pdf, corpo.opcoes || {}) };
