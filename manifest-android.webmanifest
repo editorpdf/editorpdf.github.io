@@ -1,0 +1,30 @@
+{
+    "background_color":  "#060b1c",
+    "short_name":  "Editor PDF",
+    "icons":  [
+                  {
+                      "type":  "image/png",
+                      "sizes":  "192x192",
+                      "src":  "icone-192.png"
+                  },
+                  {
+                      "purpose":  "any",
+                      "type":  "image/png",
+                      "sizes":  "512x512",
+                      "src":  "icone-512.png"
+                  },
+                  {
+                      "purpose":  "maskable",
+                      "type":  "image/png",
+                      "sizes":  "512x512",
+                      "src":  "icone-512-maskable.png"
+                  }
+              ],
+    "lang":  "pt-BR",
+    "theme_color":  "#060b1c",
+    "display":  "fullscreen",
+    "display_override":  ["fullscreen", "standalone"],
+    "name":  "Editor de PDF",
+    "scope":  "./",
+    "start_url":  "./"
+}
