@@ -4960,7 +4960,7 @@ function mostrarEstado(){
   const e=saudeEstado(),itens=SAUDE.log.slice(0,8);
   const hora=t=>new Date(t).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   const dh=document.documentElement,dp=celPref(),dsat=areaSeguraTopo(),movelDg=matchMedia('(max-width:700px)').matches;
-  const diag=movelDg?'<p class="est-diag">Anel: '+(dp.status!==false?'ligado':'desligado em Configurações')+' · Aberto pelo: '+(dh.classList.contains('standalone')?'ícone da Tela de Início':'navegador (no Safari a ilha fica fora da página: o anel só aparece pelo ícone)')+' · Modelo: '+(dp.modelo==='auto'?'automático':dp.modelo)+' · Área segura do topo: '+Math.round(dsat)+' px · Anel na tela: '+(document.getElementById('ilhaStatus')?'sim':'não')+'</p>':'';
+  const diag=movelDg?'<p class="est-diag">Anel: '+(dp.status!==false?'ligado':'desligado em Configurações')+' · Aberto pelo: '+(dh.classList.contains('ios')?(dh.classList.contains('standalone')?'ícone da Tela de Início':'navegador (no Safari a ilha fica fora da página: o anel só aparece pelo ícone)'):(window.APP_CELULAR?'aplicativo Android (APK)':'navegador ou atalho do Android'))+' · Modelo: '+(dp.modelo==='auto'?(_modeloAuto||'automático'):dp.modelo)+' · Área segura do topo: '+Math.round(dsat)+' px · Tela: '+screen.width+'×'+screen.height+', página: '+innerWidth+'×'+innerHeight+(!dh.classList.contains('ios')&&Math.abs(Math.max(screen.width,screen.height)-Math.max(innerWidth,innerHeight))>10?' (a página não chega até o furo da câmera: no Android isso só funciona no aplicativo APK)':'')+' · Anel na tela: '+(document.getElementById('ilhaStatus')?'sim':'não')+'</p>':'';
   const lista=itens.length?'<ul class="est-lista" id="estLista">'+itens.map(i=>'<li><b>'+hora(i.t)+'</b> '+esc(i.msg)+(i.pers&&SAUDE.persist.size?' <em>(ainda acontecendo)</em>':'')+'</li>').join('')+'</ul>':'<p id="estLista">Nenhum erro recente. Tudo certo.</p>';
   dialog({title:e==='ok'?'Tudo certo':'O app teve um problema',sub:e==='ok'?(document.getElementById('ilhaStatus')?'O anel da ilha está verde: nenhum erro agora.':'Nenhum erro agora.'):'Houve um erro'+(document.getElementById('ilhaStatus')?', e o anel da ilha está vermelho. Ele volta a ficar verde sozinho quando o problema passa.':'. Isto some sozinho quando o problema passa.'),body:lista+'<div><button class="btn sm" type="button" id="estLimpar">Limpar a lista</button></div>'+diag,ok:'Fechar',cancel:''});
   setTimeout(()=>{const b=$('#estLimpar');if(b)b.onclick=()=>{saudeLimpar();const l=$('#estLista');if(l)l.outerHTML='<p id="estLista">Lista limpa. Tudo certo.</p>'}},0)}
@@ -4980,7 +4980,9 @@ function aplicarVisualCelular(){
   const h=document.documentElement,p=celPref(),sat=areaSeguraTopo();
   const m=p.modelo==='auto'?(_modeloAuto?MODELOS_CEL.find(x=>x.id===_modeloAuto):null):MODELOS_CEL.find(x=>x.id===p.modelo);
   const entalhe=m?m.raio>8:sat>20;
-  const noSafari=h.classList.contains('ios')&&!h.classList.contains('standalone');
+  const emAndroid=!h.classList.contains('ios')&&/Android/i.test(navigator.userAgent)&&matchMedia('(max-width:700px)').matches;
+  const ocupaTudo=Math.abs(Math.max(screen.width,screen.height)-Math.max(innerWidth,innerHeight))<=10;
+  const noSafari=(h.classList.contains('ios')&&!h.classList.contains('standalone'))||(emAndroid&&!ocupaTudo); // a página não chega até o furo/ilha: sem anel nem luz da ilha
   const ilha=noSafari?null:(m?(m.ilha||null):(sat>=54?{w:126,h:37,top:sat>=62?14:11}:null));
   h.classList.toggle('tem-entalhe',!!entalhe);
   const velho=document.getElementById('luzBorda');if(velho)velho.remove();
